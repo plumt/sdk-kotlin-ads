@@ -1,0 +1,67 @@
+public final class net/plumt/ads/compose/AdBannerKt {
+	public static final fun AdBanner (Ljava/lang/String;Landroidx/compose/ui/Modifier;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class net/plumt/ads/compose/AdInterleave {
+	public static final field $stable I
+	public fun <init> (III)V
+	public synthetic fun <init> (IIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getFirstAdAfter ()I
+	public final fun getInterval ()I
+	public final fun getMaxAds ()I
+	public final fun plan (I)Lnet/plumt/ads/compose/InterleavePlan;
+}
+
+public final class net/plumt/ads/compose/AdsClientLocalKt {
+	public static final fun ProvideAdsClient (Lnet/plumt/ads/AdsClient;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
+	public static final fun findActivity (Landroid/content/Context;)Landroid/app/Activity;
+	public static final fun getLocalAdsClient ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun rememberFullScreenAdController (Lnet/plumt/ads/AdFormat;Ljava/lang/String;Ljava/lang/String;Lnet/plumt/ads/AdFrequencyPolicy;Lnet/plumt/ads/PreloadPolicy;Landroidx/compose/runtime/Composer;II)Lnet/plumt/ads/FullScreenAdController;
+}
+
+public final class net/plumt/ads/compose/InterleaveKt {
+	public static final field AD_ITEM_KEY_PREFIX Ljava/lang/String;
+	public static final fun itemsWithAds (Landroidx/compose/foundation/lazy/LazyListScope;Ljava/util/List;Lnet/plumt/ads/compose/AdInterleave;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;Lkotlin/jvm/functions/Function4;)V
+	public static synthetic fun itemsWithAds$default (Landroidx/compose/foundation/lazy/LazyListScope;Ljava/util/List;Lnet/plumt/ads/compose/AdInterleave;ZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function4;Lkotlin/jvm/functions/Function4;ILjava/lang/Object;)V
+}
+
+public final class net/plumt/ads/compose/InterleavePlan {
+	public static final field $stable I
+	public final fun adSlot (I)I
+	public final fun contentIndex (I)I
+	public final fun getAdCount ()I
+	public final fun getContentCount ()I
+	public final fun getTotalCount ()I
+	public final fun isAd (I)Z
+	public final fun listIndexOfContent (I)I
+}
+
+public final class net/plumt/ads/compose/NativeAdPool {
+	public static final field $stable I
+	public final fun get (I)Lnet/plumt/ads/network/NativeAdHandle;
+	public final fun getLoading ()Z
+	public final fun getSize ()I
+}
+
+public final class net/plumt/ads/compose/NativeAdViewIds {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> (IIIIIIIII)V
+	public synthetic fun <init> (IIIIIIIIIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAdvertiser ()I
+	public final fun getBody ()I
+	public final fun getCallToAction ()I
+	public final fun getHeadline ()I
+	public final fun getIcon ()I
+	public final fun getMedia ()I
+	public final fun getPrice ()I
+	public final fun getStarRating ()I
+	public final fun getStore ()I
+}
+
+public final class net/plumt/ads/compose/NativeAdsKt {
+	public static final field MAX_NATIVE_POOL_SIZE I
+	public static final fun NativeAdSlot (Lnet/plumt/ads/compose/NativeAdPool;IILnet/plumt/ads/compose/NativeAdViewIds;Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;II)V
+	public static final fun rememberNativeAdPool (Ljava/lang/String;ILjava/lang/String;Landroidx/compose/runtime/Composer;II)Lnet/plumt/ads/compose/NativeAdPool;
+}
+

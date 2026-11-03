@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    APPLICATION_ID meta-data 는 일부러 선언하지 않는다. 광고 앱 ID 는 앱이 자기 매니페스트에 적는다(README 참고).
+    INTERNET·ACCESS_NETWORK_STATE 는 광고 SDK 가 어차피 병합하는 권한이다.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+</manifest>
