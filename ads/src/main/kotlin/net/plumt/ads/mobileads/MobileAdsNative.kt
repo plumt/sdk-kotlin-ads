@@ -4,6 +4,8 @@ import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.RatingBar
 import android.widget.TextView
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
@@ -14,7 +16,6 @@ import com.google.android.gms.ads.nativead.MediaView
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdOptions
 import com.google.android.gms.ads.nativead.NativeAdView
-import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import net.plumt.ads.AdsErrorKind
@@ -28,30 +29,30 @@ internal object MobileAdsNativeProvider : NativeAdProvider {
     override suspend fun load(context: Context, adUnitId: String, count: Int): List<NativeAdHandle> {
         require(count in 1..MAX_COUNT) { "count 는 1..$MAX_COUNT 이어야 합니다: $count" }
         return suspendCancellableCoroutine { cont ->
-            val loaded = mutableListOf<NativeAd>()
-            var failure: LoadAdError? = null
+            val gate = NativeLoadGate<NativeAd>(count)
             var loader: AdLoader? = null
 
-            fun finishIfDone() {
-                if (loader?.isLoading != false || !cont.isActive) return
-                if (loaded.isEmpty()) {
-                    val e = failure
-                    cont.resumeWithException(
-                        AdsException(
-                            AdsErrorKind.Load,
-                            e?.code ?: AdsException.CODE_UNKNOWN,
-                            e?.message ?: "네이티브 광고를 받지 못했습니다",
+            fun settle(outcome: NativeLoadGate.Outcome<NativeAd>) {
+                when (outcome) {
+                    NativeLoadGate.Outcome.Pending -> Unit
+                    is NativeLoadGate.Outcome.Late -> outcome.ad.destroy()
+                    is NativeLoadGate.Outcome.Success -> {
+                        val handles = outcome.ads.map { MobileAdsNativeHandle(it) }
+                        cont.resumeOrRelease<List<NativeAdHandle>>(handles) { list -> list.forEach { it.destroy() } }
+                    }
+                    is NativeLoadGate.Outcome.Failure -> if (cont.isActive) {
+                        val code = outcome.code
+                        cont.resumeWithException(
+                            if (code != null) loadException(code, outcome.message.orEmpty())
+                            else AdsException(AdsErrorKind.Load, AdsException.CODE_UNKNOWN, "네이티브 광고를 받지 못했습니다")
                         )
-                    )
-                } else {
-                    cont.resume(loaded.map { MobileAdsNativeHandle(it) })
+                    }
                 }
             }
 
             loader = AdLoader.Builder(context.applicationContext, adUnitId)
                 .forNativeAd { ad ->
-                    if (cont.isActive) loaded += ad else ad.destroy()
-                    finishIfDone()
+                    if (!cont.isActive) ad.destroy() else settle(gate.onAd(ad, loader?.isLoading == true))
                 }
                 .withNativeAdOptions(
                     NativeAdOptions.Builder()
@@ -60,21 +61,28 @@ internal object MobileAdsNativeProvider : NativeAdProvider {
                 )
                 .withAdListener(object : AdListener() {
                     override fun onAdFailedToLoad(error: LoadAdError) {
-                        failure = error
-                        finishIfDone()
+                        // 실패 콜백은 이 요청의 끝이다. isLoading 이 아직 참이어도 기다리지 않는다
+                        settle(gate.onFailed(error.code, error.message))
                     }
                 })
                 .build()
-            cont.invokeOnCancellation { loaded.forEach { it.destroy() } }
+            cont.invokeOnCancellation { gate.pending.forEach { it.destroy() } }
             loader.loadAds(AdRequest.Builder().build(), count)
         }
     }
+
+    override fun createMediaView(context: Context): View = MediaView(context)
 
     /** 한 요청으로 받을 수 있는 광고 수 상한. */
     const val MAX_COUNT = 5
 }
 
+/** 동영상 광고는 미디어 뷰 없이 보일 수 없다(정책). */
+internal fun canBindNative(hasVideo: Boolean, hasMediaView: Boolean): Boolean = !hasVideo || hasMediaView
+
 private class MobileAdsNativeHandle(private val ad: NativeAd) : NativeAdHandle {
+    private var adView: NativeAdView? = null
+
     override val assets: NativeAdAssets = NativeAdAssets(
         headline = ad.headline,
         body = ad.body,
@@ -84,15 +92,19 @@ private class MobileAdsNativeHandle(private val ad: NativeAd) : NativeAdHandle {
         store = ad.store,
         starRating = ad.starRating,
         icon = ad.icon?.drawable,
+        hasVideo = ad.mediaContent?.hasVideoContent() == true,
     )
 
-    override fun bind(container: ViewGroup, views: NativeAdViews) {
+    override fun bind(container: ViewGroup, views: NativeAdViews): Boolean {
         val media = views.media
         require(media == null || media is MediaView) {
             "media 뷰는 MediaView 여야 합니다: ${media?.javaClass?.name}"
         }
+        if (!canBindNative(assets.hasVideo, media != null)) return false
+        // 다시 묶으면 이전 래퍼를 놓는다(목록 스크롤에서 뷰가 쌓이지 않게)
+        adView?.destroy()
         // 광고 SDK 는 뷰들이 NativeAdView 아래에 있어야 클릭·노출을 센다. 앱 레이아웃을 그 아래로 옮겨 끼운다.
-        val adView = NativeAdView(container.context)
+        val adView = NativeAdView(container.context).also { this.adView = it }
         val children = (0 until container.childCount).map { container.getChildAt(it) }
         container.removeAllViews()
         children.forEach { adView.addView(it) }
@@ -108,21 +120,36 @@ private class MobileAdsNativeHandle(private val ad: NativeAd) : NativeAdHandle {
         adView.storeView = views.store
         adView.starRatingView = views.starRating
         adView.iconView = views.icon
-        adView.mediaView = media as MediaView?
+        (media as MediaView?)?.apply {
+            setImageScaleType(ImageView.ScaleType.CENTER_CROP)
+            // 미디어 자산이 없는 광고면 빈 미디어 자리를 남기지 않는다
+            visibility = if (ad.mediaContent == null) View.GONE else View.VISIBLE
+        }
+        adView.mediaView = media
         (views.headline as? TextView)?.text = ad.headline
         (views.body as? TextView)?.apply { text = ad.body; visibility = visibleIf(ad.body) }
         (views.callToAction as? TextView)?.apply { text = ad.callToAction; visibility = visibleIf(ad.callToAction) }
         (views.advertiser as? TextView)?.apply { text = ad.advertiser; visibility = visibleIf(ad.advertiser) }
         (views.price as? TextView)?.apply { text = ad.price; visibility = visibleIf(ad.price) }
         (views.store as? TextView)?.apply { text = ad.store; visibility = visibleIf(ad.store) }
-        (views.icon as? android.widget.ImageView)?.apply {
+        (views.starRating as? RatingBar)?.apply {
+            val stars = ad.starRating
+            rating = stars?.toFloat() ?: 0f
+            visibility = if (stars == null) View.GONE else View.VISIBLE
+        }
+        (views.icon as? ImageView)?.apply {
             setImageDrawable(ad.icon?.drawable)
             visibility = if (ad.icon == null) View.GONE else View.VISIBLE
         }
         adView.setNativeAd(ad)
+        return true
     }
 
-    override fun destroy() = ad.destroy()
+    override fun destroy() {
+        adView?.destroy()
+        adView = null
+        ad.destroy()
+    }
 
     private fun visibleIf(text: String?) = if (text.isNullOrBlank()) View.GONE else View.VISIBLE
 }

@@ -8,8 +8,14 @@ public enum class SuppressReason {
     /** [AdsEnabledSource] 가 꺼져 있거나 동의·초기화가 아직 광고 요청을 허용하지 않는다. */
     Unavailable,
 
-    /** [AdFrequencyPolicy] 가 막았다. */
+    /** [AdFrequencyPolicy] 가 막았다. 앱 오프닝은 다른 전면형 광고가 닫힌 직후([AdsConfig.appOpenCooldownMillis])에도 이 값이다. */
     FrequencyCapped,
+
+    /** 이 클라이언트의 다른 전면형 광고가 화면에 떠 있다. 전면형 광고는 한 번에 하나만 보인다. */
+    AnotherAdShowing,
+
+    /** 광고 단위 ID 가 모드와 맞지 않아(운영 모드의 빈 ID·시험 ID) 요청하지 않는다. [AdsClient.configurationErrors] 에 원인이 있다. */
+    Misconfigured,
 }
 
 /**
@@ -30,6 +36,8 @@ public sealed class AdEvent {
         override val placement: String,
         val code: Int,
         val message: String,
+        /** 원인 분류. 분석·대시보드에서 이 값으로 묶는다. */
+        val reason: AdErrorReason = AdErrorReason.Unknown,
     ) : AdEvent()
 
     public data class Impression(override val format: AdFormat, override val placement: String) : AdEvent()
@@ -40,6 +48,8 @@ public sealed class AdEvent {
         override val placement: String,
         val code: Int,
         val message: String,
+        /** 원인 분류. 분석·대시보드에서 이 값으로 묶는다. */
+        val reason: AdErrorReason = AdErrorReason.Unknown,
     ) : AdEvent()
 
     public data class Dismissed(override val format: AdFormat, override val placement: String) : AdEvent()
@@ -48,6 +58,14 @@ public sealed class AdEvent {
         override val placement: String,
         val type: String,
         val amount: Int,
+    ) : AdEvent()
+
+    /** 광고 단위 ID 가 모드와 맞지 않아 요청하지 않았다([AdsErrorKind.Configuration]). */
+    public data class Misconfigured(
+        override val format: AdFormat,
+        override val placement: String,
+        val code: Int,
+        val message: String,
     ) : AdEvent()
 
     public data class Suppressed(

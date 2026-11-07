@@ -35,6 +35,8 @@ class NetworkModelsTest {
         assertEquals("h", a.headline); assertEquals("b", a.body); assertEquals("c", a.callToAction)
         assertEquals("adv", a.advertiser); assertEquals("1000", a.price); assertEquals("store", a.store)
         assertEquals(4.5, a.starRating!!, 0.0); assertNull(a.icon)
+        org.junit.Assert.assertFalse(a.hasVideo)
+        org.junit.Assert.assertTrue(NativeAdAssets(null, null, null, null, null, null, null, null, hasVideo = true).hasVideo)
     }
 
     @Test fun nativeViewsHoldGivenViews() {

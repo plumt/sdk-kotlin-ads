@@ -10,7 +10,11 @@ import net.plumt.ads.network.AdNetwork
 import net.plumt.ads.network.FullScreenAd
 import net.plumt.ads.network.FullScreenAdCallbacks
 import net.plumt.ads.network.FullScreenAdProvider
+import android.view.ViewGroup
+import net.plumt.ads.network.NativeAdAssets
+import net.plumt.ads.network.NativeAdHandle
 import net.plumt.ads.network.NativeAdProvider
+import net.plumt.ads.network.NativeAdViews
 
 class FakeClock(var now: Long = 0L) : AdClock {
     override fun nowMillis(): Long = now
@@ -61,8 +65,9 @@ class FakeGateway(var snapshot: ConsentSnapshot = ConsentSnapshot.Initial) : Con
     var onGather: ((AdsException?) -> Unit) -> Unit = { done -> done(null) }
     var onPrivacy: ((AdsException?) -> Unit) -> Unit = { done -> done(null) }
     override fun current(): ConsentSnapshot = snapshot
-    override fun gather(activity: Activity, onDone: (AdsException?) -> Unit) {
+    override fun gather(activity: Activity, onUpdateRequested: () -> Unit, onDone: (AdsException?) -> Unit) {
         gatherCalls++
+        onUpdateRequested()
         onGather(onDone)
     }
 
@@ -74,12 +79,15 @@ class FakeGateway(var snapshot: ConsentSnapshot = ConsentSnapshot.Initial) : Con
 
 class FakeNetwork : AdNetwork {
     var initCalls = 0
-    var initFailure: AdsException? = null
+    var initFailure: Exception? = null
+    var lastConfig: AdsConfig? = null
+    val nativeProvider = FakeNativeProvider()
     val interstitialProvider = FakeProvider()
     val rewardedProvider = FakeProvider()
     val appOpenProvider = FakeProvider()
     override suspend fun initialize(context: Context, config: AdsConfig) {
         initCalls++
+        lastConfig = config
         initFailure?.let { throw it }
     }
 
@@ -87,7 +95,7 @@ class FakeNetwork : AdNetwork {
     override val rewarded: FullScreenAdProvider = rewardedProvider
     override val appOpen: FullScreenAdProvider = appOpenProvider
     override val banner: BannerProvider = BannerProvider { _, _, _, _ -> error("미사용") }
-    override val native: NativeAdProvider = NativeAdProvider { _, _, _ -> error("미사용") }
+    override val native: NativeAdProvider = nativeProvider
 }
 
 class RecordingEvents : AdEventListener {
@@ -101,3 +109,29 @@ class RecordingEvents : AdEventListener {
 
 val ALLOW = ConsentSnapshot(net.plumt.ads.consent.ConsentStatus.Obtained, canRequestAds = true, privacyOptionsRequired = true)
 val DENY = ConsentSnapshot(net.plumt.ads.consent.ConsentStatus.Required, canRequestAds = false, privacyOptionsRequired = false)
+
+class FakeNativeHandle(val id: String = "") : NativeAdHandle {
+    var destroyed = 0
+    override val assets = NativeAdAssets(null, null, null, null, null, null, null, null)
+    override fun bind(container: ViewGroup, views: NativeAdViews): Boolean = true
+    override fun destroy() {
+        destroyed++
+    }
+}
+
+/** 큐에 넣은 결과(목록 또는 Throwable)를 차례로 돌려준다. 비면 요청한 ID 로 한 장. */
+class FakeNativeProvider : NativeAdProvider {
+    val results = ArrayDeque<Any>()
+    val requestedIds = mutableListOf<String>()
+    var gate: CompletableDeferred<Unit>? = null
+    val produced = mutableListOf<FakeNativeHandle>()
+
+    override suspend fun load(context: Context, adUnitId: String, count: Int): List<NativeAdHandle> {
+        requestedIds += adUnitId
+        gate?.await()
+        val r = results.removeFirstOrNull() ?: listOf(FakeNativeHandle(adUnitId))
+        if (r is Throwable) throw r
+        @Suppress("UNCHECKED_CAST")
+        return (r as List<FakeNativeHandle>).also { produced += it }
+    }
+}

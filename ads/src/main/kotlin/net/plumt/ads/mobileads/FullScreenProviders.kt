@@ -12,18 +12,15 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
-import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
-import net.plumt.ads.AdsErrorKind
-import net.plumt.ads.AdsException
 import net.plumt.ads.network.FullScreenAd
 import net.plumt.ads.network.FullScreenAdCallbacks
 import net.plumt.ads.network.FullScreenAdProvider
 
-private fun LoadAdError.toException() = AdsException(AdsErrorKind.Load, code, message)
+private fun LoadAdError.toException() = loadException(code, message)
 
-private fun AdError.toShowException() = AdsException(AdsErrorKind.Show, code, message)
+private fun AdError.toShowException() = showException(code, message)
 
 private fun FullScreenAdCallbacks.toSdk() = object : FullScreenContentCallback() {
     override fun onAdShowedFullScreenContent() = onShown()
@@ -52,7 +49,7 @@ internal object InterstitialProvider : FullScreenAdProvider {
                                 ad.fullScreenContentCallback = null
                             }
                         }
-                        if (cont.isActive) cont.resume(wrapped) else wrapped.destroy()
+                        cont.resumeOrRelease(wrapped) { it.destroy() }
                     }
 
                     override fun onAdFailedToLoad(error: LoadAdError) {
@@ -82,7 +79,7 @@ internal object RewardedProvider : FullScreenAdProvider {
                                 ad.fullScreenContentCallback = null
                             }
                         }
-                        if (cont.isActive) cont.resume(wrapped) else wrapped.destroy()
+                        cont.resumeOrRelease(wrapped) { it.destroy() }
                     }
 
                     override fun onAdFailedToLoad(error: LoadAdError) {
@@ -112,7 +109,7 @@ internal object AppOpenProvider : FullScreenAdProvider {
                                 ad.fullScreenContentCallback = null
                             }
                         }
-                        if (cont.isActive) cont.resume(wrapped) else wrapped.destroy()
+                        cont.resumeOrRelease(wrapped) { it.destroy() }
                     }
 
                     override fun onAdFailedToLoad(error: LoadAdError) {

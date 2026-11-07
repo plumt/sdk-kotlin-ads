@@ -149,25 +149,25 @@ class AdsClientTest {
     @Test fun controllerFactoryValidatesArguments() = runTest {
         val c = client()
         assertEquals(
-            "전면형 형식이 아닙니다: Banner (Interstitial·Rewarded·AppOpen 만 허용)",
-            assertThrows(IllegalArgumentException::class.java) { c.fullScreenController(AdFormat.Banner, "p", "id") }.message,
+            "형식이 맞지 않는 광고 단위입니다: name=p, format=Banner (허용: Interstitial·Rewarded·AppOpen)",
+            assertThrows(IllegalArgumentException::class.java) { c.fullScreenController(AdUnit("p", AdFormat.Banner, "id"), "p") }.message,
         )
-        assertThrows(IllegalArgumentException::class.java) { c.fullScreenController(AdFormat.Native, "p", "id") }
+        assertThrows(IllegalArgumentException::class.java) { c.fullScreenController(AdUnit("p", AdFormat.Native, "id"), "p") }
         assertEquals(
-            "placement 가 비었습니다",
-            assertThrows(IllegalArgumentException::class.java) { c.fullScreenController(AdFormat.Interstitial, " ", "id") }.message,
+            "placement 가 비었습니다: name=u",
+            assertThrows(IllegalArgumentException::class.java) { c.fullScreenController(AdUnit("u", AdFormat.Interstitial, "id"), " ") }.message,
         )
-        assertEquals(
-            "adUnitId 가 비었습니다: placement=p",
-            assertThrows(IllegalArgumentException::class.java) { c.fullScreenController(AdFormat.Interstitial, "p", "") }.message,
-        )
+        // 대체 단위의 형식이 다르면 즉시 막는다
+        assertThrows(IllegalArgumentException::class.java) {
+            c.fullScreenController(AdUnit.interstitial("a", "x"), fallbacks = listOf(AdUnit.rewarded("b", "y")))
+        }
     }
 
     @Test fun controllerUsesFormatSpecificProvider() = runTest {
         val c = client()
-        c.fullScreenController(AdFormat.Interstitial, "a", "id").destroy()
-        c.fullScreenController(AdFormat.Rewarded, "b", "id").destroy()
-        c.fullScreenController(AdFormat.AppOpen, "c", "id").destroy()
+        c.fullScreenController(AdUnit("a", AdFormat.Interstitial, "id"), "a").destroy()
+        c.fullScreenController(AdUnit("b", AdFormat.Rewarded, "id"), "b").destroy()
+        c.fullScreenController(AdUnit("c", AdFormat.AppOpen, "id"), "c").destroy()
         assertEquals(1, network.interstitialProvider.loads)
         assertEquals(1, network.rewardedProvider.loads)
         assertEquals(1, network.appOpenProvider.loads)
@@ -176,7 +176,7 @@ class AdsClientTest {
     @Test fun endToEndSwitchOffDropsReadyAd() = runTest {
         val ad = network.interstitialProvider.enqueueAd()
         val c = client()
-        val ctrl = c.fullScreenController(AdFormat.Interstitial, "home", "id", AdFrequencyPolicy.Unlimited)
+        val ctrl = c.fullScreenController(AdUnit("home", AdFormat.Interstitial, "id"), "home", AdFrequencyPolicy.Unlimited)
         assertEquals(FullScreenAdState.Ready, ctrl.state.value)
         enabled.set(false)
         assertEquals(1, ad.destroyed)
@@ -184,11 +184,17 @@ class AdsClientTest {
         ctrl.destroy()
     }
 
-    @Test fun defaultPolicyPerFormat() {
-        assertSame(AdFrequencyPolicy.Unlimited, AdsClient.defaultPolicyFor(AdFormat.Rewarded))
-        assertTrue(AdsClient.defaultPolicyFor(AdFormat.Interstitial) is IntervalFrequencyPolicy)
-        assertTrue(AdsClient.defaultPolicyFor(AdFormat.AppOpen) is IntervalFrequencyPolicy)
-        assertTrue(AdsClient.defaultPolicyFor(AdFormat.Interstitial) !== AdsClient.defaultPolicyFor(AdFormat.Interstitial))
+    @Test fun defaultPolicyPerFormatIsSharedWithinClient() = runTest {
+        val c = client()
+        assertSame(AdFrequencyPolicy.Unlimited, c.defaultPolicy(AdFormat.Rewarded))
+        assertTrue(c.defaultPolicy(AdFormat.Interstitial) is IntervalFrequencyPolicy)
+        assertSame(c.defaultPolicy(AdFormat.Interstitial), c.defaultPolicy(AdFormat.Interstitial))
+        assertSame(c.defaultPolicy(AdFormat.AppOpen), c.defaultPolicy(AdFormat.AppOpen))
+        assertEquals(
+            "전면형 형식이 아닙니다: Banner (Interstitial·Rewarded·AppOpen 만 허용)",
+            assertThrows(IllegalArgumentException::class.java) { c.defaultPolicy(AdFormat.Banner) }.message,
+        )
+        assertThrows(IllegalArgumentException::class.java) { c.defaultPolicy(AdFormat.Native) }
     }
 
     @Test fun closeCancelsScope() = runTest {

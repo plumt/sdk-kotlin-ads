@@ -50,7 +50,7 @@ class FullScreenAdControllerTest {
         preload: PreloadPolicy = PreloadPolicy(),
         format: AdFormat = AdFormat.Interstitial,
     ) = FullScreenAdController(
-        format, "home", "ca-app-pub-3940256099942544/1033173712", context, provider, policy, preload,
+        format, "home", listOf(AdUnit("home", format, "x") to "ca-app-pub-3940256099942544/1033173712"), context, provider, policy, preload,
         available, events, clock, CoroutineScope(UnconfinedTestDispatcher(testScheduler) + job),
     )
 
@@ -240,7 +240,11 @@ class FullScreenAdControllerTest {
         clock.advance(999)
         // 만료 직전에는 보인다 — 새로 시험하려고 정책을 따로 두지 않고 경계만 확인
         clock.advance(1)
-        assertEquals(ShowResult.NotReady, c.show(activity))
+        val expired = c.show(activity) as ShowResult.Failed
+        assertEquals(AdErrorReason.Expired, expired.error.reason)
+        assertEquals(AdsErrorKind.Show, expired.error.kind)
+        assertEquals(AdsException.CODE_EXPIRED, expired.error.code)
+        assertNull(c.lastError.value) // 바로 다시 불러와 채웠다
         assertEquals(1, old.destroyed)
         assertEquals(2, provider.loads)
         assertEquals(FullScreenAdState.Ready, c.state.value)
@@ -332,7 +336,7 @@ class FullScreenAdControllerTest {
             }
         }
         val c = FullScreenAdController(
-            AdFormat.AppOpen, "open", "id", context, late, AdFrequencyPolicy.Unlimited, PreloadPolicy(),
+            AdFormat.AppOpen, "open", listOf(AdUnit.appOpen("open", "") to "id"), context, late, AdFrequencyPolicy.Unlimited, PreloadPolicy(),
             available, events, clock, CoroutineScope(UnconfinedTestDispatcher(testScheduler) + job),
         )
         c.destroy()

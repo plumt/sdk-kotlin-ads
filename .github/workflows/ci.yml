@@ -16,4 +16,7 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
       # build 가 apiCheck 를 포함한다 — 공개 API 가 .api 와 다르면 실패한다
+      # build 가 :sample:check 의 verifyReleaseKeptConstructors 도 돌린다 — R8 release dex 에 리플렉션 대상 생성자가 남았는지(기기 불필요)
       - run: ./gradlew build
+      # 소비 앱이 광고 SDK 를 올려도 깨지지 않는지: 알려진 최신 버전으로 강제 해석해 컴파일·단위 테스트를 다시 돌린다
+      - run: ./gradlew :ads:compileReleaseKotlin :ads:testDebugUnitTest :sample:verifyReleaseKeptConstructors -PgmaCompatVersion=25.5.0

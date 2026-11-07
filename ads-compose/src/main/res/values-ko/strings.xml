@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="net_plumt_ads_native_badge">광고</string>
+    <string name="net_plumt_ads_exit_title">앱 종료</string>
+    <string name="net_plumt_ads_exit_message">앱을 종료할까요?</string>
+    <string name="net_plumt_ads_exit_cancel">취소</string>
+    <string name="net_plumt_ads_exit_confirm">종료</string>
+    <string name="net_plumt_ads_preview_headline">광고 제목 예시</string>
+    <string name="net_plumt_ads_preview_body">광고 본문 예시입니다. 실제 광고는 이 자리에 설명이 들어갑니다.</string>
+    <string name="net_plumt_ads_preview_cta">자세히 보기</string>
+    <string name="net_plumt_ads_preview_banner">광고 배너</string>
+    <string name="net_plumt_ads_preview_row_headline">광고 제목 예시</string>
+    <string name="net_plumt_ads_preview_row_body">광고 본문 예시</string>
+    <string name="net_plumt_ads_preview_row_cta">설치</string>
+</resources>

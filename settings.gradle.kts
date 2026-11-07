@@ -24,3 +24,4 @@ rootProject.name = "sdk-kotlin-ads"
 
 include(":ads")
 include(":ads-compose")
+include(":sample")

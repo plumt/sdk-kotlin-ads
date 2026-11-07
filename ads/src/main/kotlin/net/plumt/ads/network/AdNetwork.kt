@@ -16,8 +16,11 @@ import net.plumt.ads.AdsException
 public interface AdNetwork {
     /**
      * SDK 를 초기화한다. 이미 초기화했으면 곧바로 끝난다.
+     * [config] 는 클라이언트가 모드를 정한 뒤의 값이다 — [AdsConfig.mode] 는 `Development`·`Production` 중 하나이고,
+     * 운영 모드면 시험 기기 ID·동의 디버그 지역이 지워져 있다.
      *
-     * @throws AdsException 초기화 실패([net.plumt.ads.AdsErrorKind.Initialization])
+     * @throws AdsException 초기화 실패([net.plumt.ads.AdsErrorKind.Initialization]) 또는
+     *   설정이 모드와 맞지 않음([net.plumt.ads.AdsErrorKind.Configuration])
      */
     public suspend fun initialize(context: Context, config: AdsConfig)
 
@@ -106,7 +109,12 @@ public fun interface BannerProvider {
     public fun create(context: Context, adUnitId: String, widthDp: Int, listener: BannerListener): BannerHandle
 }
 
-/** 네이티브 광고의 글·이미지 자산. 없는 것은 null. */
+/**
+ * 네이티브 광고의 글·이미지 자산. 없는 것은 null.
+ *
+ * @property hasVideo 동영상 소재다. 동영상 광고는 미디어 뷰(기본 구현에서는 `MediaView`) 없이 보이면 정책 위반이라
+ *   [NativeAdHandle.bind] 가 미디어 뷰 없는 레이아웃에 묶기를 거부한다
+ */
 public class NativeAdAssets(
     public val headline: String?,
     public val body: String?,
@@ -116,6 +124,7 @@ public class NativeAdAssets(
     public val store: String?,
     public val starRating: Double?,
     public val icon: Drawable?,
+    public val hasVideo: Boolean = false,
 )
 
 /** 앱 레이아웃 안의 뷰. 레이아웃에 없는 자산은 null 로 둔다. */
@@ -128,7 +137,7 @@ public class NativeAdViews(
     public val store: View? = null,
     public val starRating: View? = null,
     public val icon: View? = null,
-    /** 미디어(큰 이미지·동영상) 뷰. 기본 구현에서는 `MediaView` 여야 한다. */
+    /** 미디어(큰 이미지·동영상) 뷰. 기본 구현에서는 `MediaView` 여야 하고, 가로·세로 120dp 이상으로 둔다. */
     public val media: View? = null,
 )
 
@@ -139,11 +148,13 @@ public interface NativeAdHandle {
 
     /**
      * [container] 안에 이미 올라간 [views] 에 이 광고를 묶는다. 네트워크가 요구하는 래퍼 뷰는 구현이 알아서 끼운다.
-     * "광고" 표시는 앱 레이아웃이 보이게 둔다.
+     * "광고" 표시는 앱 레이아웃이 보이게 둔다. 다시 묶으면 이전에 끼운 래퍼 뷰는 놓는다.
      *
+     * @return 묶었으면 true. 정책상 이 레이아웃에 보일 수 없는 광고(미디어 뷰 없는 레이아웃의 동영상 광고 등)면
+     *   [container] 를 건드리지 않고 false — 호출부는 이 광고를 보이지 않는다
      * @throws IllegalArgumentException [views] 가 구현이 요구하는 형식이 아닐 때
      */
-    public fun bind(container: ViewGroup, views: NativeAdViews)
+    public fun bind(container: ViewGroup, views: NativeAdViews): Boolean
 
     /** 참조를 놓는다. */
     public fun destroy()
@@ -159,4 +170,10 @@ public fun interface NativeAdProvider {
      * @throws AdsException 하나도 받지 못했을 때([net.plumt.ads.AdsErrorKind.Load])
      */
     public suspend fun load(context: Context, adUnitId: String, count: Int): List<NativeAdHandle>
+
+    /**
+     * 이 네트워크의 미디어 뷰(큰 이미지·동영상)를 만든다. 라이브러리 템플릿이 [NativeAdViews.media] 자리에 끼운다.
+     * 미디어 뷰를 지원하지 않으면 null(기본) — 템플릿은 미디어 없이 그리고, 동영상 광고는 그리지 않는다.
+     */
+    public fun createMediaView(context: Context): View? = null
 }

@@ -40,9 +40,14 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.ui)
+    // 기성 카드·종료 팝업의 기본 색·글꼴이 MaterialTheme 을 따른다. 색은 인자로 모두 바꿀 수 있다
+    implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 mavenPublishing {
@@ -68,15 +73,23 @@ kover {
         filters {
             excludes {
             // Compose UI·AndroidView 접착 코드 — Compose UI 테스트(에뮬레이터)가 필요해 유닛 테스트에서 뺀다.
-            // 순수 계산(InterleavePlan)은 InterleaveTest 가 검증한다. itemsWithAds 는 LazyListScope 접착이라 같이 뺀다
+            // 순수 계산(InterleavePlan·풀 불러오기 루프·슬롯 판단)은 유닛 테스트한다. itemsWithAds 는 LazyListScope 접착이라 같이 뺀다
             classes(
                 "net.plumt.ads.compose.AdBannerKt*",
                 "net.plumt.ads.compose.NativeAdsKt*",
-                "net.plumt.ads.compose.NativeAdPool",
                 "net.plumt.ads.compose.NativeAdViewIds",
                 "net.plumt.ads.compose.AdsClientLocalKt*",
                 "net.plumt.ads.compose.InterleaveKt*",
                 "net.plumt.ads.compose.ComposableSingletons*",
+                // 기성 카드·종료 팝업·미리보기 자리표시: Material3 그리기와 AndroidView 바인딩뿐이다.
+                // 그리기 판단(slotDraw·canDrawNative·previewVisibility·배너 높이)은 순수 함수로 빼 유닛 테스트한다
+                "net.plumt.ads.compose.NativeAdCardsKt*",
+                "net.plumt.ads.compose.NativeAdDefaults",
+                "net.plumt.ads.compose.NativeAdRowDefaults",
+                "net.plumt.ads.compose.NativeAdMetrics",
+                "net.plumt.ads.compose.ExitDialogKt*",
+                "net.plumt.ads.compose.AdExitDialogDefaults",
+                "net.plumt.ads.compose.AdPreviewKt*",
             )
             }
         }

@@ -164,7 +164,8 @@ class ValueTypesTest {
         assertEquals(AdsErrorKind.Show, e.kind)
         assertEquals(3, e.code)
         assertSame(cause, e.cause)
-        assertEquals("[Show/3] 실패", e.message)
+        assertEquals("[Show/Unknown/3] 실패", e.message)
+        assertEquals(AdErrorReason.Unknown, e.reason)
         assertEquals(-1, AdsException.CODE_UNKNOWN)
     }
 

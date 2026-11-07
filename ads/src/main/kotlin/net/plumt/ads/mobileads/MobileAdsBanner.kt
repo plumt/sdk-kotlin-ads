@@ -29,7 +29,7 @@ internal object MobileAdsBannerProvider : BannerProvider {
                     override fun onAdImpression() = listener.onImpression()
                     override fun onAdClicked() = listener.onClicked()
                     override fun onAdFailedToLoad(error: LoadAdError) =
-                        listener.onLoadFailed(AdsException(AdsErrorKind.Load, error.code, error.message))
+                        listener.onLoadFailed(loadException(error.code, error.message))
                 }
             }
         } catch (e: Exception) {

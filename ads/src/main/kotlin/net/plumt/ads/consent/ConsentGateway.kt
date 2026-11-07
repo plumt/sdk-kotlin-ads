@@ -17,8 +17,13 @@ import net.plumt.ads.ConsentDebugGeography
 internal interface ConsentGateway {
     fun current(): ConsentSnapshot
 
-    /** 동의 정보를 갱신하고 필요하면 폼을 띄운다. 끝나면 [onDone] (실패 원인 또는 null). */
-    fun gather(activity: Activity, onDone: (AdsException?) -> Unit)
+    /**
+     * 동의 정보를 갱신하고 필요하면 폼을 띄운다. 끝나면 [onDone] (실패 원인 또는 null).
+     *
+     * 갱신을 **요청한 직후**(응답 전) [onUpdateRequested] 를 부른다. UMP 는 이 프로세스에서 갱신을 요청하기 전에는
+     * `canRequestAds()` 가 늘 false 이고, 요청한 뒤부터 지난 실행에 저장된 동의를 돌려준다.
+     */
+    fun gather(activity: Activity, onUpdateRequested: () -> Unit, onDone: (AdsException?) -> Unit)
 
     fun showPrivacyOptions(activity: Activity, onDone: (AdsException?) -> Unit)
 }
@@ -37,7 +42,7 @@ internal class UmpConsentGateway(
             info.privacyOptionsRequirementStatus == ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED,
     )
 
-    override fun gather(activity: Activity, onDone: (AdsException?) -> Unit) {
+    override fun gather(activity: Activity, onUpdateRequested: () -> Unit, onDone: (AdsException?) -> Unit) {
         val params = ConsentRequestParameters.Builder().apply {
             when (config.audience.underAgeOfConsent) {
                 AdFlag.Unspecified -> Unit
@@ -54,6 +59,8 @@ internal class UmpConsentGateway(
             },
             { error -> onDone(error.toException()) },
         )
+        // 공식 권장: 갱신 응답을 기다리지 않고 지난 실행의 동의(canRequestAds)로 광고 SDK 초기화를 병행한다
+        onUpdateRequested()
     }
 
     override fun showPrivacyOptions(activity: Activity, onDone: (AdsException?) -> Unit) {
@@ -61,16 +68,23 @@ internal class UmpConsentGateway(
     }
 
     private fun debugSettings(activity: Activity): ConsentDebugSettings? {
-        val geography = when (config.consentDebugGeography) {
-            ConsentDebugGeography.Disabled -> return null
-            ConsentDebugGeography.Eea -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA
-            ConsentDebugGeography.NotEea -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_NOT_EEA
-        }
+        val geography = config.consentDebugGeography.toUmpGeography() ?: return null
         return ConsentDebugSettings.Builder(activity).apply {
             setDebugGeography(geography)
             config.testDeviceIds.forEach { addTestDeviceHashedId(it) }
         }.build()
     }
+}
+
+/**
+ * UMP 의 `ConsentDebugSettings.DebugGeography` 정수. [ConsentDebugGeography.Disabled] 는 디버그 설정 자체를 넣지 않아 null.
+ * EEA 밖은 UMP 4.x 에서 사라질 `DEBUG_GEOGRAPHY_NOT_EEA` 대신 `DEBUG_GEOGRAPHY_OTHER` 를 쓴다.
+ */
+internal fun ConsentDebugGeography.toUmpGeography(): Int? = when (this) {
+    ConsentDebugGeography.Disabled -> null
+    ConsentDebugGeography.Eea -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA
+    ConsentDebugGeography.NotEea -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_OTHER
+    ConsentDebugGeography.RegulatedUsState -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_REGULATED_US_STATE
 }
 
 private fun FormError.toException(): AdsException =

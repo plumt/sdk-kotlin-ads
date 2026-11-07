@@ -70,16 +70,16 @@ kover {
     reports {
         filters {
             excludes {
-            // UMP SDK 직결 어댑터 — 실제 SDK 가 필요해 단위 테스트가 불가능하다(DefaultConsentManager 는 가짜 게이트웨이로 검증)
-            // Google Mobile Ads SDK 직결 어댑터 — 실광고 SDK·네트워크가 필요하다. 인자 매핑 함수(toSdkTag·toSdkRating)는
-            // MobileAdsMappingTest 가 검증하지만 같은 파일의 초기화 코드는 SDK 가 필요해 파일 단위로 뺀다
+            // UMP SDK 직결 어댑터 — 실제 SDK 가 필요해 단위 테스트가 불가능하다(DefaultConsentManager 는 가짜 게이트웨이로,
+            // 지역 매핑 toUmpGeography 는 MobileAdsSeamTest 가 검증하지만 같은 파일의 폼 오류 변환과 함께 파일 단위로 뺀다).
+            // Google Mobile Ads SDK 직결 어댑터 — 실광고 SDK·네트워크가 필요하다. MobileAdsNetwork 의 초기화 순서·스레드·예외는
+            // MobileAdsSdk 이음새로 검증하고, 정적 SDK 호출만 하는 RealMobileAdsSdk·공급자·네이티브 핸들은 뺀다
             classes(
                 "net.plumt.ads.consent.UmpConsentGateway*",
                 "net.plumt.ads.consent.ConsentGatewayKt*",
                 "net.plumt.ads.mobileads.*Provider*",
                 "net.plumt.ads.mobileads.MobileAdsNativeHandle*",
-                "net.plumt.ads.mobileads.MobileAdsNetwork",
-                "net.plumt.ads.mobileads.MobileAdsNetwork$*",
+                "net.plumt.ads.mobileads.RealMobileAdsSdk*",
                 "net.plumt.ads.mobileads.FullScreenProvidersKt*",
             )
             }
@@ -94,3 +94,11 @@ kover {
 }
 
 tasks.named("check") { dependsOn("koverVerify") }
+
+// 소비 앱이 광고 SDK 를 더 새 버전으로 올려도(Gradle 이 높은 쪽을 고른다) 이 라이브러리가 컴파일·동작하는지 확인하는 변형.
+// 예: ./gradlew :ads:compileReleaseKotlin :ads:testDebugUnitTest -PgmaCompatVersion=25.5.0 (CI 가 최신 버전으로 돌린다)
+providers.gradleProperty("gmaCompatVersion").orNull?.let { version ->
+    configurations.configureEach {
+        resolutionStrategy.force("com.google.android.gms:play-services-ads:$version")
+    }
+}
