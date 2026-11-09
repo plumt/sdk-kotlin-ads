@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- NativeAdSlot 이 묶은 광고를 컨테이너 뷰 태그로 기억하는 키. 리소스 id 라 앱 id 와 겹치지 않는다 -->
-    <item name="net_plumt_ads_native_bound" type="id" />
+    <item name="ads_native_bound" type="id" />
 </resources>

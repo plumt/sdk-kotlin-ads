@@ -16,6 +16,7 @@ import net.plumt.ads.AdFrequencyPolicy
 import net.plumt.ads.AdUnit
 import net.plumt.ads.AdsClient
 import net.plumt.ads.FrequencyScope
+import net.plumt.ads.FullScreenAdOptions
 import net.plumt.ads.FullScreenAdController
 import net.plumt.ads.PreloadPolicy
 
@@ -64,13 +65,17 @@ public fun rememberFullScreenAdController(
     unit: AdUnit,
     placement: String = unit.name,
     policy: AdFrequencyPolicy? = null,
-    preload: PreloadPolicy = PreloadPolicy(),
+    preload: PreloadPolicy = PreloadPolicy.Default,
     fallbacks: List<AdUnit> = emptyList(),
     frequencyScope: FrequencyScope = FrequencyScope.PerFormat,
 ): FullScreenAdController {
     val client = if (adPreviewVisible() != null) previewClient() else requireAdsClient()
     val controller = remember(client, unit, placement, fallbacks, frequencyScope) {
-        client.fullScreenController(unit, placement, policy, preload, fallbacks, frequencyScope)
+        val options = FullScreenAdOptions.builder()
+            .placement(placement).preload(preload).fallbacks(fallbacks).frequencyScope(frequencyScope)
+            .apply { policy?.let(::policy) }
+            .build()
+        client.fullScreenController(unit, options)
     }
     DisposableEffect(controller) { onDispose { controller.destroy() } }
     return controller

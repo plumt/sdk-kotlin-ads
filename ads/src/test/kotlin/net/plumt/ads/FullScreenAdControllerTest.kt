@@ -47,7 +47,7 @@ class FullScreenAdControllerTest {
 
     private fun TestScope.controller(
         policy: AdFrequencyPolicy = AdFrequencyPolicy.Unlimited,
-        preload: PreloadPolicy = PreloadPolicy(),
+        preload: PreloadPolicy = preload(),
         format: AdFormat = AdFormat.Interstitial,
     ) = FullScreenAdController(
         format, "home", listOf(AdUnit("home", format, "x") to "ca-app-pub-3940256099942544/1033173712"), context, provider, policy, preload,
@@ -82,7 +82,7 @@ class FullScreenAdControllerTest {
 
     @Test fun autoPreloadOffWaitsForExplicitPreload() = runTest {
         provider.enqueueAd()
-        val c = controller(preload = PreloadPolicy(autoPreload = false))
+        val c = controller(preload = preload(autoPreload = false))
         assertEquals(0, provider.loads)
         c.preload()
         assertEquals(1, provider.loads)
@@ -134,7 +134,7 @@ class FullScreenAdControllerTest {
 
     @Test fun reloadAfterDismissOffStaysIdle() = runTest {
         val ad = provider.enqueueAd()
-        val c = controller(preload = PreloadPolicy(reloadAfterDismiss = false))
+        val c = controller(preload = preload(reloadAfterDismiss = false))
         c.show(activity)
         ad.callbacks!!.onDismissed()
         assertEquals(1, provider.loads)
@@ -154,7 +154,7 @@ class FullScreenAdControllerTest {
     }
 
     @Test fun notReadyWhenNothingLoadedTriggersLoad() = runTest {
-        val c = controller(preload = PreloadPolicy(autoPreload = false))
+        val c = controller(preload = preload(autoPreload = false))
         assertEquals(ShowResult.NotReady, c.show(activity))
         assertEquals(1, provider.loads)
     }
@@ -179,7 +179,7 @@ class FullScreenAdControllerTest {
         assertSame(err, failure)
         assertTrue(policy.shown.isEmpty())
         assertEquals(1, ad.destroyed)
-        assertEquals(AdEvent.ShowFailed(AdFormat.Interstitial, "home", 5, err.message!!), events.list.single { it is AdEvent.ShowFailed })
+        assertEquals(AdEvent.ShowFailed(AdFormat.Interstitial, "home", 5, err.message!!, err.reason), events.list.single { it is AdEvent.ShowFailed })
         assertEquals(2, provider.loads)
     }
 
@@ -224,7 +224,7 @@ class FullScreenAdControllerTest {
 
     @Test fun switchOffDuringShowingKeepsAdUntilDismissed() = runTest {
         val ad = provider.enqueueAd()
-        val c = controller(preload = PreloadPolicy(reloadAfterDismiss = false))
+        val c = controller(preload = preload(reloadAfterDismiss = false))
         c.show(activity)
         available.value = false
         assertEquals(0, ad.destroyed)
@@ -236,7 +236,7 @@ class FullScreenAdControllerTest {
     @Test fun expiredAdIsDroppedAndReloaded() = runTest {
         val old = provider.enqueueAd()
         val fresh = provider.enqueueAd()
-        val c = controller(preload = PreloadPolicy(expireAfterMillis = 1_000))
+        val c = controller(preload = preload(expireAfterMillis = 1_000))
         clock.advance(999)
         // 만료 직전에는 보인다 — 새로 시험하려고 정책을 따로 두지 않고 경계만 확인
         clock.advance(1)
@@ -254,7 +254,7 @@ class FullScreenAdControllerTest {
 
     @Test fun adJustBeforeExpiryStillShows() = runTest {
         val ad = provider.enqueueAd()
-        val c = controller(preload = PreloadPolicy(expireAfterMillis = 1_000))
+        val c = controller(preload = preload(expireAfterMillis = 1_000))
         clock.advance(999)
         assertEquals(ShowResult.Started, c.show(activity))
         assertEquals(1, ad.shown)
@@ -264,7 +264,7 @@ class FullScreenAdControllerTest {
         provider.enqueueError(AdsException(AdsErrorKind.Load, 3, "no fill"))
         provider.enqueueError(AdsException(AdsErrorKind.Load, 3, "no fill"))
         provider.enqueueAd()
-        val c = controller(preload = PreloadPolicy(maxRetries = 2, retryBackoffMillis = 100))
+        val c = controller(preload = preload(maxRetries = 2, retryBackoffMillis = 100))
         assertEquals(1, provider.loads)
         advanceTimeBy(99)
         assertEquals(1, provider.loads)
@@ -281,7 +281,7 @@ class FullScreenAdControllerTest {
 
     @Test fun retriesExhaustedEndsIdle() = runTest {
         repeat(3) { provider.enqueueError(AdsException(AdsErrorKind.Load, 3, "no fill")) }
-        val c = controller(preload = PreloadPolicy(maxRetries = 2, retryBackoffMillis = 10))
+        val c = controller(preload = preload(maxRetries = 2, retryBackoffMillis = 10))
         advanceTimeBy(1_000)
         assertEquals(3, provider.loads)
         assertEquals(FullScreenAdState.Idle, c.state.value)
@@ -290,14 +290,14 @@ class FullScreenAdControllerTest {
 
     @Test fun zeroRetriesFailsOnce() = runTest {
         provider.enqueueError(AdsException(AdsErrorKind.Load, 3, "no fill"))
-        val c = controller(preload = PreloadPolicy(maxRetries = 0))
+        val c = controller(preload = preload(maxRetries = 0))
         assertEquals(1, provider.loads)
         assertEquals(FullScreenAdState.Idle, c.state.value)
     }
 
     @Test fun foreignProviderExceptionIsWrappedNotCrashing() = runTest {
         provider.enqueueError(IllegalStateException("SDK 터짐"))
-        controller(preload = PreloadPolicy(maxRetries = 0))
+        controller(preload = preload(maxRetries = 0))
         val failed = events.list.filterIsInstance<AdEvent.LoadFailed>().single()
         assertEquals(AdsException.CODE_UNKNOWN, failed.code)
         assertTrue(failed.message, failed.message.contains("IllegalStateException: SDK 터짐"))
@@ -336,7 +336,7 @@ class FullScreenAdControllerTest {
             }
         }
         val c = FullScreenAdController(
-            AdFormat.AppOpen, "open", listOf(AdUnit.appOpen("open", "") to "id"), context, late, AdFrequencyPolicy.Unlimited, PreloadPolicy(),
+            AdFormat.AppOpen, "open", listOf(AdUnit.appOpen("open", "") to "id"), context, late, AdFrequencyPolicy.Unlimited, preload(),
             available, events, clock, CoroutineScope(UnconfinedTestDispatcher(testScheduler) + job),
         )
         c.destroy()

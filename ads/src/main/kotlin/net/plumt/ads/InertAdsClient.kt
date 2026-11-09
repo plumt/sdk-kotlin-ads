@@ -35,11 +35,16 @@ internal object InertGateway : ConsentGateway {
     override fun showPrivacyOptions(activity: Activity, onDone: (AdsException?) -> Unit) = onDone(null)
 }
 
+/** [inert] 를 개발 모드 설정으로 만든다. */
+public fun AdsClient.Companion.inert(context: Context): AdsClient =
+    inert(context, AdsConfig.builder().mode(AdsMode.Development).build())
+
 /**
- * 광고를 절대 요청하지 않는 클라이언트. 스위치는 꺼짐, 동의·SDK 는 건드리지 않는다.
- * Compose 미리보기·스크린샷·UI 테스트에서 [AdsClient] 가 필요한 코드에 넘긴다. 운영 코드에는 쓰지 않는다.
+ * 광고를 절대 요청하지 않는 클라이언트. 스위치는 꺼짐([AdsConfig.enabledSource] 는 무시한다), 동의·SDK 는 건드리지 않는다.
+ * Compose 미리보기·스크린샷에서 [AdsClient] 가 필요한 코드에 넘긴다. 운영 코드에는 쓰지 않는다.
+ * 앱 단위 테스트에서 광고 흐름을 시험하려면 [FakeAdsClient] 를 쓴다.
  */
-public fun AdsClient.Companion.inert(context: Context, config: AdsConfig = AdsConfig(mode = AdsMode.Development)): AdsClient =
+public fun AdsClient.Companion.inert(context: Context, config: AdsConfig): AdsClient =
     DefaultAdsClient(
         context.applicationContext ?: context, config, AdsEnabledSource.Never, AdEventListener.None, InertNetwork, InertGateway,
         AdClock.Default, CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),

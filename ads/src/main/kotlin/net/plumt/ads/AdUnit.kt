@@ -33,13 +33,7 @@ public object TestAdIds {
     public fun isTestId(id: String): Boolean = id.trim().startsWith(PUBLISHER_PREFIX)
 
     /** [format] 의 기본 시험 단위 ID. */
-    public fun forFormat(format: AdFormat): String = when (format) {
-        AdFormat.Banner -> BANNER
-        AdFormat.Native -> NATIVE
-        AdFormat.Interstitial -> INTERSTITIAL
-        AdFormat.Rewarded -> REWARDED
-        AdFormat.AppOpen -> APP_OPEN
-    }
+    public fun forFormat(format: AdFormat): String = format.testUnitId
 }
 
 /**
@@ -60,12 +54,16 @@ public object TestAdIds {
  * @property development 개발 ID. 생략하면 [TestAdIds.forFormat]
  * @throws IllegalArgumentException [name]·[development] 가 비었을 때
  */
-public data class AdUnit(
-    val name: String,
-    val format: AdFormat,
-    val production: String,
-    val development: String = TestAdIds.forFormat(format),
+public class AdUnit(
+    public val name: String,
+    public val format: AdFormat,
+    public val production: String,
+    public val development: String,
 ) {
+    /** 개발 ID 를 [TestAdIds.forFormat] 으로 둔다. */
+    public constructor(name: String, format: AdFormat, production: String) :
+        this(name, format, production, TestAdIds.forFormat(format))
+
     init {
         require(name.isNotBlank()) { "name 이 비었습니다: format=$format" }
         require(development.isNotBlank()) { "development 가 비었습니다: name=$name" }
@@ -87,14 +85,14 @@ public data class AdUnit(
             throw AdsException(
                 AdsErrorKind.Configuration, AdsException.CODE_PRODUCTION_ID_MISSING,
                 "운영 모드인데 운영 광고 단위 ID 가 비었습니다: name=$name, format=$format",
-                reason = AdErrorReason.Misconfigured,
+                null, AdErrorReason.Misconfigured,
             )
         }
         if (TestAdIds.isTestId(id) || id == development.trim()) {
             throw AdsException(
                 AdsErrorKind.Configuration, AdsException.CODE_TEST_ID_IN_PRODUCTION,
                 "운영 모드인데 운영 광고 단위 ID 가 시험 ID 입니다: name=$name, format=$format, id=$id",
-                reason = AdErrorReason.Misconfigured,
+                null, AdErrorReason.Misconfigured,
             )
         }
         return id
@@ -119,31 +117,64 @@ public data class AdUnit(
         }
     }
 
+    override fun equals(other: Any?): Boolean =
+        other is AdUnit && name == other.name && format == other.format && production == other.production &&
+            development == other.development
+
+    override fun hashCode(): Int = ((name.hashCode() * 31 + format.hashCode()) * 31 + production.hashCode()) * 31 + development.hashCode()
+
+    override fun toString(): String = "AdUnit(name=$name, format=$format, production=$production, development=$development)"
+
     public companion object {
+        /** 배너 단위. 개발 ID 는 [TestAdIds.BANNER]. */
+        @JvmStatic
+        public fun banner(name: String, production: String): AdUnit = AdUnit(name, AdFormat.Banner, production)
+
         /** 배너 단위. */
-        public fun banner(name: String, production: String, development: String = TestAdIds.BANNER): AdUnit =
+        @JvmStatic
+        public fun banner(name: String, production: String, development: String): AdUnit =
             AdUnit(name, AdFormat.Banner, production, development)
 
+        /** 네이티브 단위. 개발 ID 는 [TestAdIds.NATIVE]. */
+        @JvmStatic
+        public fun native(name: String, production: String): AdUnit = AdUnit(name, AdFormat.Native, production)
+
         /** 네이티브 단위. */
-        public fun native(name: String, production: String, development: String = TestAdIds.NATIVE): AdUnit =
+        @JvmStatic
+        public fun native(name: String, production: String, development: String): AdUnit =
             AdUnit(name, AdFormat.Native, production, development)
 
+        /** 전면 단위. 개발 ID 는 [TestAdIds.INTERSTITIAL]. */
+        @JvmStatic
+        public fun interstitial(name: String, production: String): AdUnit = AdUnit(name, AdFormat.Interstitial, production)
+
         /** 전면 단위. */
-        public fun interstitial(name: String, production: String, development: String = TestAdIds.INTERSTITIAL): AdUnit =
+        @JvmStatic
+        public fun interstitial(name: String, production: String, development: String): AdUnit =
             AdUnit(name, AdFormat.Interstitial, production, development)
 
+        /** 보상형 단위. 개발 ID 는 [TestAdIds.REWARDED]. */
+        @JvmStatic
+        public fun rewarded(name: String, production: String): AdUnit = AdUnit(name, AdFormat.Rewarded, production)
+
         /** 보상형 단위. */
-        public fun rewarded(name: String, production: String, development: String = TestAdIds.REWARDED): AdUnit =
+        @JvmStatic
+        public fun rewarded(name: String, production: String, development: String): AdUnit =
             AdUnit(name, AdFormat.Rewarded, production, development)
 
+        /** 앱 오프닝 단위. 개발 ID 는 [TestAdIds.APP_OPEN]. */
+        @JvmStatic
+        public fun appOpen(name: String, production: String): AdUnit = AdUnit(name, AdFormat.AppOpen, production)
+
         /** 앱 오프닝 단위. */
-        public fun appOpen(name: String, production: String, development: String = TestAdIds.APP_OPEN): AdUnit =
+        @JvmStatic
+        public fun appOpen(name: String, production: String, development: String): AdUnit =
             AdUnit(name, AdFormat.AppOpen, production, development)
     }
 }
 
 /**
- * 앱의 광고 단위 등록부. 이름으로 찾고, [AdsClient.create] 에 넘기면 운영 모드에서 만들 때 한 번에 검사해
+ * 앱의 광고 단위 등록부. 이름으로 찾고, [AdsConfig.units] 로 넘기면 운영 모드에서 만들 때 한 번에 검사해
  * 잘못된 단위를 [AdsClient.configurationErrors] 에 미리 올린다(화면에 가기 전에 안다).
  *
  * @throws IllegalArgumentException 이름이 겹칠 때
@@ -179,6 +210,6 @@ public class AdUnitRegistry(units: List<AdUnit>) {
 
     public companion object {
         /** 빈 등록부. */
-        public val Empty: AdUnitRegistry = AdUnitRegistry(emptyList())
+        @JvmField public val Empty: AdUnitRegistry = AdUnitRegistry(emptyList())
     }
 }

@@ -138,9 +138,9 @@ public fun NativeAdContent(
         update = { container ->
             if (container.getTag(TAG_BOUND) === ad) return@AndroidView
             container.removeAllViews()
-            val root = LayoutInflater.from(container.context).inflate(R.layout.net_plumt_ads_native_card, container, true)
+            val root = LayoutInflater.from(container.context).inflate(R.layout.ads_native_card, container, true)
             val views = cardViews(root, container.context, mediaPx) { client.network.native.createMediaView(it) }
-            root.findViewById<View>(R.id.net_plumt_ads_card_content).let { it.setPadding(it.paddingLeft, insetPx, it.paddingRight, it.paddingBottom) }
+            root.findViewById<View>(R.id.ads_card_content).let { it.setPadding(it.paddingLeft, insetPx, it.paddingRight, it.paddingBottom) }
             if (ad.bind(container, views)) {
                 colors?.let { applyCardColors(views, it, density.density) }
                 container.setTag(TAG_BOUND, ad)
@@ -152,18 +152,18 @@ public fun NativeAdContent(
 }
 
 private fun cardViews(root: View, context: Context, mediaPx: Int?, createMedia: (Context) -> View?): NativeAdViews {
-    val mediaSlot = root.findViewById<FrameLayout>(R.id.net_plumt_ads_card_media)
+    val mediaSlot = root.findViewById<FrameLayout>(R.id.ads_card_media)
     val media = mediaPx?.let { createMedia(context) }?.also { view ->
         mediaSlot.addView(view, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, mediaPx))
         mediaSlot.visibility = View.VISIBLE
     }
-    return NativeAdViews(
-        headline = root.findViewById(R.id.net_plumt_ads_card_headline),
-        body = root.findViewById(R.id.net_plumt_ads_card_body),
-        callToAction = root.findViewById(R.id.net_plumt_ads_card_cta),
-        icon = root.findViewById(R.id.net_plumt_ads_card_icon),
-        media = media,
-    )
+    return NativeAdViews.builder()
+        .headline(root.findViewById(R.id.ads_card_headline))
+        .body(root.findViewById(R.id.ads_card_body))
+        .callToAction(root.findViewById(R.id.ads_card_cta))
+        .icon(root.findViewById(R.id.ads_card_icon))
+        .media(media)
+        .build()
 }
 
 private fun applyCardColors(views: NativeAdViews, colors: NativeAdColors, density: Float) {
@@ -211,7 +211,7 @@ private fun NativeAdBadge() {
         color = MaterialTheme.colorScheme.secondaryContainer,
     ) {
         Text(
-            text = stringResource(R.string.net_plumt_ads_native_badge),
+            text = stringResource(R.string.ads_native_badge),
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
             color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -300,34 +300,88 @@ public fun NativeAdInline(
 // ============ 행 광고 ============
 
 /**
- * [NativeAdRow] 의 겉모습. 앱 목록 항목과 같은 값을 넘겨 주변과 어울리게 한다. 기본값은 [NativeAdRowDefaults.style].
+ * [NativeAdRow] 의 겉모습. 앱 목록 항목과 같은 값을 넘겨 주변과 어울리게 한다. [NativeAdRowDefaults.style] 로 만든다(바꿀 값만 넘긴다).
  * 글자 크기는 sp 여야 한다(뷰로 그린다).
- *
- * @property minHeight 행 최소 높이. AdChoices(우상단 약 16dp)와 CTA 가 겹치지 않으려면 64dp 근처 이상
- * @property borderColor null 이면 윤곽선 없음
  */
 @Immutable
-public data class NativeAdRowStyle(
-    val minHeight: Dp,
-    val contentPadding: PaddingValues,
-    val iconSize: Dp,
-    val iconCornerRadius: Dp,
-    val background: Color,
-    val cornerRadius: Dp,
-    val borderColor: Color?,
-    val titleColor: Color,
-    val titleSize: TextUnit,
-    val bodyColor: Color,
-    val bodySize: TextUnit,
-    val ctaBackground: Color,
-    val ctaContentColor: Color,
-    val ctaCornerRadius: Dp,
-    val badgeBackground: Color,
-    val badgeContentColor: Color,
-    val showDividerTop: Boolean,
-    val showDividerBottom: Boolean,
-    val dividerColor: Color,
-)
+public class NativeAdRowStyle internal constructor(
+    /** 행 최소 높이. AdChoices(우상단 약 16dp)와 CTA 가 겹치지 않으려면 64dp 근처 이상. */
+    public val minHeight: Dp,
+
+    /** 행 안쪽 여백. */
+    public val contentPadding: PaddingValues,
+
+    /** 아이콘 크기. */
+    public val iconSize: Dp,
+
+    /** 아이콘 모서리 반경. */
+    public val iconCornerRadius: Dp,
+
+    /** 행 배경. */
+    public val background: Color,
+
+    /** 행 모서리 반경. */
+    public val cornerRadius: Dp,
+
+    /** 윤곽선 색. null 이면 윤곽선 없음. */
+    public val borderColor: Color?,
+
+    /** 제목 색. */
+    public val titleColor: Color,
+
+    /** 제목 글자 크기(sp). */
+    public val titleSize: TextUnit,
+
+    /** 본문 색. */
+    public val bodyColor: Color,
+
+    /** 본문 글자 크기(sp). */
+    public val bodySize: TextUnit,
+
+    /** CTA 칩 배경. */
+    public val ctaBackground: Color,
+
+    /** CTA 칩 글자 색. */
+    public val ctaContentColor: Color,
+
+    /** CTA 칩 모서리 반경. */
+    public val ctaCornerRadius: Dp,
+
+    /** "광고" 배지 배경. */
+    public val badgeBackground: Color,
+
+    /** "광고" 배지 글자 색. */
+    public val badgeContentColor: Color,
+
+    /** 위 구분선을 그린다. */
+    public val showDividerTop: Boolean,
+
+    /** 아래 구분선을 그린다. */
+    public val showDividerBottom: Boolean,
+
+    /** 구분선 색. */
+    public val dividerColor: Color,
+) {
+    private fun parts(): List<Any?> = listOf(
+        minHeight, contentPadding, iconSize, iconCornerRadius, background, cornerRadius, borderColor,
+        titleColor, titleSize, bodyColor, bodySize, ctaBackground, ctaContentColor, ctaCornerRadius,
+        badgeBackground, badgeContentColor, showDividerTop, showDividerBottom, dividerColor,
+    )
+
+    override fun equals(other: Any?): Boolean = other is NativeAdRowStyle && parts() == other.parts()
+
+    override fun hashCode(): Int = parts().hashCode()
+
+    override fun toString(): String = "NativeAdRowStyle(" + PART_NAMES.zip(parts()).joinToString { (n, v) -> "$n=$v" } + ")"
+
+    private companion object {
+        val PART_NAMES = listOf(
+            "minHeight", "contentPadding", "iconSize", "iconCornerRadius", "background", "cornerRadius", "borderColor",
+            "titleColor", "titleSize", "bodyColor", "bodySize", "ctaBackground", "ctaContentColor", "ctaCornerRadius",
+            "badgeBackground", "badgeContentColor", "showDividerTop", "showDividerBottom", "dividerColor",
+        )
+    }
+}
 
 /** [NativeAdRowStyle] 기본값. */
 public object NativeAdRowDefaults {
@@ -421,20 +475,20 @@ private fun NativeAdRowFrame(modifier: Modifier, style: NativeAdRowStyle, conten
 private fun NativeAdRowContent(ad: NativeAdHandle, style: NativeAdRowStyle) {
     val density = LocalDensity.current.density
     val direction = LocalLayoutDirection.current
-    val badge = stringResource(R.string.net_plumt_ads_native_badge)
+    val badge = stringResource(R.string.ads_native_badge)
     AndroidView(
         modifier = Modifier.fillMaxWidth(),
         factory = { ctx -> FrameLayout(ctx) },
         update = { container ->
             if (container.getTag(TAG_BOUND) === ad) return@AndroidView
             container.removeAllViews()
-            val root = LayoutInflater.from(container.context).inflate(R.layout.net_plumt_ads_native_row, container, true)
-            val views = NativeAdViews(
-                headline = root.findViewById(R.id.net_plumt_ads_row_headline),
-                body = root.findViewById(R.id.net_plumt_ads_row_body),
-                callToAction = root.findViewById(R.id.net_plumt_ads_row_cta),
-                icon = root.findViewById(R.id.net_plumt_ads_row_icon),
-            )
+            val root = LayoutInflater.from(container.context).inflate(R.layout.ads_native_row, container, true)
+            val views = NativeAdViews.builder()
+                .headline(root.findViewById(R.id.ads_row_headline))
+                .body(root.findViewById(R.id.ads_row_body))
+                .callToAction(root.findViewById(R.id.ads_row_cta))
+                .icon(root.findViewById(R.id.ads_row_icon))
+                .build()
             if (ad.bind(container, views)) {
                 styleRow(root, style, density, direction, badge)
                 container.setTag(TAG_BOUND, ad)
@@ -448,7 +502,7 @@ private fun NativeAdRowContent(ad: NativeAdHandle, style: NativeAdRowStyle) {
 private fun styleRow(root: View, style: NativeAdRowStyle, density: Float, direction: LayoutDirection, badgeText: String) {
     fun Dp.px(): Int = (value * density).toInt()
     val m = NativeAdMetrics
-    val content = root.findViewById<LinearLayout>(R.id.net_plumt_ads_row_content)
+    val content = root.findViewById<LinearLayout>(R.id.ads_row_content)
     val pad = style.contentPadding
     content.setPadding(
         pad.calculateLeftPadding(direction).px(), pad.calculateTopPadding().px(),
@@ -456,7 +510,7 @@ private fun styleRow(root: View, style: NativeAdRowStyle, density: Float, direct
     )
     content.minimumHeight = style.minHeight.px()
 
-    root.findViewById<ImageView>(R.id.net_plumt_ads_row_icon).apply {
+    root.findViewById<ImageView>(R.id.ads_row_icon).apply {
         layoutParams = (layoutParams as LinearLayout.LayoutParams).apply {
             width = style.iconSize.px(); height = style.iconSize.px(); marginEnd = m.IconGap.px()
         }
@@ -466,17 +520,17 @@ private fun styleRow(root: View, style: NativeAdRowStyle, density: Float, direct
         }
         clipToOutline = true
     }
-    root.findViewById<TextView>(R.id.net_plumt_ads_row_headline).apply {
+    root.findViewById<TextView>(R.id.ads_row_headline).apply {
         setTextSize(TypedValue.COMPLEX_UNIT_SP, style.titleSize.value)
         setTextColor(style.titleColor.toArgb())
     }
-    root.findViewById<TextView>(R.id.net_plumt_ads_row_body).apply {
+    root.findViewById<TextView>(R.id.ads_row_body).apply {
         setTextSize(TypedValue.COMPLEX_UNIT_SP, style.bodySize.value)
         setTextColor(style.bodyColor.toArgb())
         layoutParams = (layoutParams as LinearLayout.LayoutParams).apply { topMargin = m.BodyTopGap.px() }
     }
     // "광고" 배지: 항상 보인다(정책). 등록 자산이 아니라 클릭되지 않는다
-    root.findViewById<TextView>(R.id.net_plumt_ads_row_badge).apply {
+    root.findViewById<TextView>(R.id.ads_row_badge).apply {
         text = badgeText
         setTextSize(TypedValue.COMPLEX_UNIT_SP, m.BadgeTextSize.value)
         setTextColor(style.badgeContentColor.toArgb())
@@ -484,7 +538,7 @@ private fun styleRow(root: View, style: NativeAdRowStyle, density: Float, direct
         background = roundedBackground(style.badgeBackground, m.BadgeCornerRadius.value * density)
         layoutParams = (layoutParams as LinearLayout.LayoutParams).apply { marginEnd = m.BadgeGap.px() }
     }
-    root.findViewById<TextView>(R.id.net_plumt_ads_row_cta).apply {
+    root.findViewById<TextView>(R.id.ads_row_cta).apply {
         setTextSize(TypedValue.COMPLEX_UNIT_SP, m.CtaTextSize.value)
         setTextColor(style.ctaContentColor.toArgb())
         setPadding(m.CtaHorizontalPadding.px(), 0, m.CtaHorizontalPadding.px(), 0)
@@ -512,20 +566,20 @@ private fun MockNativeAdRowContent(style: NativeAdRowStyle) {
                     Modifier.testTag(AdTestTags.NATIVE_BADGE).clip(RoundedCornerShape(m.BadgeCornerRadius)).background(style.badgeBackground),
                 ) {
                     Text(
-                        text = stringResource(R.string.net_plumt_ads_native_badge),
+                        text = stringResource(R.string.ads_native_badge),
                         modifier = Modifier.padding(horizontal = m.BadgeHorizontalPadding, vertical = m.BadgeVerticalPadding),
                         color = style.badgeContentColor, fontSize = m.BadgeTextSize, fontWeight = FontWeight.Bold, maxLines = 1,
                     )
                 }
                 Spacer(Modifier.width(m.BadgeGap))
                 Text(
-                    text = stringResource(R.string.net_plumt_ads_preview_row_headline),
+                    text = stringResource(R.string.ads_preview_row_headline),
                     modifier = Modifier.weight(1f), color = style.titleColor, fontSize = style.titleSize,
                     fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
             Text(
-                text = stringResource(R.string.net_plumt_ads_preview_row_body),
+                text = stringResource(R.string.ads_preview_row_body),
                 modifier = Modifier.padding(top = m.BodyTopGap), color = style.bodyColor, fontSize = style.bodySize,
                 maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
@@ -537,7 +591,7 @@ private fun MockNativeAdRowContent(style: NativeAdRowStyle) {
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = stringResource(R.string.net_plumt_ads_preview_row_cta),
+                text = stringResource(R.string.ads_preview_row_cta),
                 color = style.ctaContentColor, fontSize = m.CtaTextSize, fontWeight = FontWeight.Bold, maxLines = 1,
             )
         }

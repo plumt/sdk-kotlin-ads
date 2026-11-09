@@ -35,7 +35,7 @@ class ControllerShowEdgeTest {
     private val job = Job()
 
     private fun TestScope.controller(
-        preload: PreloadPolicy = PreloadPolicy(),
+        preload: PreloadPolicy = preload(),
         format: AdFormat = AdFormat.Rewarded,
     ) = FullScreenAdController(
         format, "p", listOf(AdUnit("p", format, "x") to "ca-app-pub-3940256099942544/5224354917"), context, provider, AdFrequencyPolicy.Unlimited, preload,
@@ -71,7 +71,7 @@ class ControllerShowEdgeTest {
     }
 
     @Test fun asynchronousFailureStillReturnsStarted() = runTest {
-        val c = controller(PreloadPolicy(reloadAfterDismiss = false))
+        val c = controller(preload(reloadAfterDismiss = false))
         val cb = Recording()
         assertEquals(ShowResult.Started, c.show(activity, cb))
         provider.produced.last().callbacks!!.onShowFailed(AdsException(AdsErrorKind.Show, 1, "x"))
@@ -81,7 +81,7 @@ class ControllerShowEdgeTest {
     }
 
     @Test fun duplicateEndCallbacksAreIgnored() = runTest {
-        val c = controller(PreloadPolicy(reloadAfterDismiss = false))
+        val c = controller(preload(reloadAfterDismiss = false))
         val cb = Recording()
         c.show(activity, cb)
         val sdk = provider.produced.last().callbacks!!
@@ -113,7 +113,7 @@ class ControllerShowEdgeTest {
 
     @Test fun backoffSaturatesInsteadOfOverflowing() = runTest {
         repeat(10) { provider.enqueueError(AdsException(AdsErrorKind.Load, 0, "x")) }
-        val c = controller(PreloadPolicy(maxRetries = 5, retryBackoffMillis = Long.MAX_VALUE / 2 + 1))
+        val c = controller(preload(maxRetries = 5, retryBackoffMillis = Long.MAX_VALUE / 2 + 1))
         assertEquals(1, provider.loads)
         advanceTimeBy(Long.MAX_VALUE / 2 + 2)
         assertEquals(2, provider.loads)

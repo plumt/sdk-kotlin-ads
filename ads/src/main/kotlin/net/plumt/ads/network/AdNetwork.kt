@@ -10,7 +10,7 @@ import net.plumt.ads.AdsException
 
 /**
  * 광고 네트워크 한 벌. 기본 구현은 [net.plumt.ads.mobileads.MobileAdsNetwork] 이고, 다른 네트워크·중개(mediation)
- * 계층을 쓰려면 이 인터페이스를 구현해 [net.plumt.ads.AdsClient.create] 에 넘긴다.
+ * 계층을 쓰려면 이 인터페이스를 구현해 [net.plumt.ads.AdsConfig.network] 로 넘긴다.
  * 메서드는 메인 스레드에서 불린다.
  */
 public interface AdNetwork {
@@ -49,12 +49,21 @@ public interface FullScreenAd {
     public fun destroy()
 }
 
-/** [FullScreenAd] 표시 중 사건. 필요한 것만 재정의한다. */
+/** [FullScreenAd] 표시 중 사건. 필요한 것만 재정의한다. 메인 스레드에서 불린다. */
 public interface FullScreenAdCallbacks {
+    /** 화면에 올랐다. */
     public fun onShown() {}
+
+    /** 노출이 기록됐다. */
     public fun onImpression() {}
+
+    /** 광고가 눌렸다. */
     public fun onClicked() {}
+
+    /** 닫혔다. */
     public fun onDismissed() {}
+
+    /** 표시가 실패했다([net.plumt.ads.AdsErrorKind.Show]). */
     public fun onShowFailed(error: AdsException) {}
 
     /** 보상형에서 보상 조건을 채웠다. */
@@ -72,11 +81,18 @@ public fun interface FullScreenAdProvider {
     public suspend fun load(context: Context, adUnitId: String): FullScreenAd
 }
 
-/** 배너 사건. */
+/** 배너 사건. 필요한 것만 재정의한다. 메인 스레드에서 불린다. */
 public interface BannerListener {
+    /** 광고가 도착했다. */
     public fun onLoaded() {}
+
+    /** 불러오기가 실패했다([net.plumt.ads.AdsErrorKind.Load]). */
     public fun onLoadFailed(error: AdsException) {}
+
+    /** 노출이 기록됐다. */
     public fun onImpression() {}
+
+    /** 광고가 눌렸다. */
     public fun onClicked() {}
 }
 
@@ -90,7 +106,11 @@ public interface BannerHandle {
 
     /** 광고를 요청한다. */
     public fun load()
+
+    /** 자동 갱신을 멈춘다(최선의 노력). */
     public fun pause()
+
+    /** 자동 갱신을 재개한다. */
     public fun resume()
 
     /** 참조를 놓는다. 뷰는 더 쓰지 않는다. */
@@ -124,22 +144,87 @@ public class NativeAdAssets(
     public val store: String?,
     public val starRating: Double?,
     public val icon: Drawable?,
-    public val hasVideo: Boolean = false,
-)
+    public val hasVideo: Boolean,
+) {
+    /** 동영상이 아닌 소재. */
+    public constructor(
+        headline: String?,
+        body: String?,
+        callToAction: String?,
+        advertiser: String?,
+        price: String?,
+        store: String?,
+        starRating: Double?,
+        icon: Drawable?,
+    ) : this(headline, body, callToAction, advertiser, price, store, starRating, icon, false)
+}
 
-/** 앱 레이아웃 안의 뷰. 레이아웃에 없는 자산은 null 로 둔다. */
-public class NativeAdViews(
-    public val headline: View? = null,
-    public val body: View? = null,
-    public val callToAction: View? = null,
-    public val advertiser: View? = null,
-    public val price: View? = null,
-    public val store: View? = null,
-    public val starRating: View? = null,
-    public val icon: View? = null,
-    /** 미디어(큰 이미지·동영상) 뷰. 기본 구현에서는 `MediaView` 여야 하고, 가로·세로 120dp 이상으로 둔다. */
-    public val media: View? = null,
-)
+/** 앱 레이아웃 안의 뷰. 레이아웃에 없는 자산은 null 로 둔다. [builder] 로 만든다. */
+public class NativeAdViews private constructor(builder: Builder) {
+    public val headline: View? = builder.headline
+    public val body: View? = builder.body
+    public val callToAction: View? = builder.callToAction
+    public val advertiser: View? = builder.advertiser
+    public val price: View? = builder.price
+    public val store: View? = builder.store
+    public val starRating: View? = builder.starRating
+    public val icon: View? = builder.icon
+
+    /**
+     * 미디어(큰 이미지·동영상) 뷰. 기본 구현에서는 GMA Next-Gen SDK 의 `MediaView` 여야 하고([NativeAdProvider.createMediaView] 로 만든다),
+     * 가로·세로 120dp 이상으로 둔다.
+     */
+    public val media: View? = builder.media
+
+    /** [NativeAdViews] 를 만든다. 정하지 않은 자산은 null. */
+    public class Builder internal constructor() {
+        internal var headline: View? = null
+        internal var body: View? = null
+        internal var callToAction: View? = null
+        internal var advertiser: View? = null
+        internal var price: View? = null
+        internal var store: View? = null
+        internal var starRating: View? = null
+        internal var icon: View? = null
+        internal var media: View? = null
+
+        /** 제목 뷰. */
+        public fun headline(view: View?): Builder = apply { headline = view }
+
+        /** 본문 뷰. */
+        public fun body(view: View?): Builder = apply { body = view }
+
+        /** 행동 유도 버튼 뷰. */
+        public fun callToAction(view: View?): Builder = apply { callToAction = view }
+
+        /** 광고주 뷰. */
+        public fun advertiser(view: View?): Builder = apply { advertiser = view }
+
+        /** 가격 뷰. */
+        public fun price(view: View?): Builder = apply { price = view }
+
+        /** 스토어 뷰. */
+        public fun store(view: View?): Builder = apply { store = view }
+
+        /** 별점 뷰. */
+        public fun starRating(view: View?): Builder = apply { starRating = view }
+
+        /** 아이콘 뷰. */
+        public fun icon(view: View?): Builder = apply { icon = view }
+
+        /** 미디어 뷰. 기본 구현에서는 `MediaView`. */
+        public fun media(view: View?): Builder = apply { media = view }
+
+        /** 만든다. */
+        public fun build(): NativeAdViews = NativeAdViews(this)
+    }
+
+    public companion object {
+        /** 빌더. */
+        @JvmStatic
+        public fun builder(): Builder = Builder()
+    }
+}
 
 /** 불러온 네이티브 광고 하나. 뷰 하나에만 묶을 수 있다. */
 public interface NativeAdHandle {

@@ -9,9 +9,11 @@ plugins {
 android {
     namespace = "net.plumt.ads.compose"
     compileSdk = 36
+    // 소비 앱의 리소스와 이름이 겹치지 않게 접두어를 강제한다
+    resourcePrefix = "ads_"
 
     defaultConfig {
-        minSdk = 23
+        minSdk = 24
         consumerProguardFiles("consumer-rules.pro")
     }
 
@@ -22,17 +24,23 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        // Robolectric 은 API 레벨마다 android-all 을 올린다 — 여러 API 를 도는 테스트가 기본 힙(512m)을 넘는다
+        unitTests.all { it.maxHeapSize = "1536m" }
+    }
+
+    lint {
+        abortOnError = true
     }
 }
 
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        // 공개 인터페이스의 기본 구현을 Java 기본 메서드로만 낸다(DefaultImpls 없음) — 인터페이스에 함수를 더해도 구현체가 깨지지 않는다
+        jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.NO_COMPATIBILITY)
     }
     explicitApi()
-
 }
-
 
 dependencies {
     api(project(":ads"))

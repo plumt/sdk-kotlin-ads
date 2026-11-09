@@ -1,24 +1,22 @@
 public final class net/plumt/ads/AdAudience {
 	public static final field Companion Lnet/plumt/ads/AdAudience$Companion;
+	public static final field Default Lnet/plumt/ads/AdAudience;
 	public fun <init> ()V
 	public fun <init> (Lnet/plumt/ads/AdFlag;Lnet/plumt/ads/AdFlag;Lnet/plumt/ads/AdContentRating;)V
-	public synthetic fun <init> (Lnet/plumt/ads/AdFlag;Lnet/plumt/ads/AdFlag;Lnet/plumt/ads/AdContentRating;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFlag;
-	public final fun component2 ()Lnet/plumt/ads/AdFlag;
-	public final fun component3 ()Lnet/plumt/ads/AdContentRating;
-	public final fun copy (Lnet/plumt/ads/AdFlag;Lnet/plumt/ads/AdFlag;Lnet/plumt/ads/AdContentRating;)Lnet/plumt/ads/AdAudience;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdAudience;Lnet/plumt/ads/AdFlag;Lnet/plumt/ads/AdFlag;Lnet/plumt/ads/AdContentRating;ILjava/lang/Object;)Lnet/plumt/ads/AdAudience;
 	public fun equals (Ljava/lang/Object;)Z
+	public static final fun forTarget (Lnet/plumt/ads/AdTarget;)Lnet/plumt/ads/AdAudience;
 	public final fun getChildDirected ()Lnet/plumt/ads/AdFlag;
 	public final fun getMaxContentRating ()Lnet/plumt/ads/AdContentRating;
 	public final fun getUnderAgeOfConsent ()Lnet/plumt/ads/AdFlag;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+	public final fun withChildDirected (Lnet/plumt/ads/AdFlag;)Lnet/plumt/ads/AdAudience;
+	public final fun withMaxContentRating (Lnet/plumt/ads/AdContentRating;)Lnet/plumt/ads/AdAudience;
+	public final fun withUnderAgeOfConsent (Lnet/plumt/ads/AdFlag;)Lnet/plumt/ads/AdAudience;
 }
 
 public final class net/plumt/ads/AdAudience$Companion {
 	public final fun forTarget (Lnet/plumt/ads/AdTarget;)Lnet/plumt/ads/AdAudience;
-	public final fun getDefault ()Lnet/plumt/ads/AdAudience;
 }
 
 public abstract interface class net/plumt/ads/AdClock {
@@ -41,22 +39,50 @@ public final class net/plumt/ads/AdConnectivity$Companion {
 	public final fun system (Landroid/content/Context;)Lnet/plumt/ads/AdConnectivity;
 }
 
-public final class net/plumt/ads/AdContentRating : java/lang/Enum {
-	public static final field G Lnet/plumt/ads/AdContentRating;
-	public static final field MA Lnet/plumt/ads/AdContentRating;
-	public static final field PG Lnet/plumt/ads/AdContentRating;
-	public static final field T Lnet/plumt/ads/AdContentRating;
-	public static final field Unspecified Lnet/plumt/ads/AdContentRating;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/AdContentRating;
-	public static fun values ()[Lnet/plumt/ads/AdContentRating;
+public abstract interface class net/plumt/ads/AdContentRating {
 }
 
-public final class net/plumt/ads/AdErrorReason : java/lang/Enum {
+public final class net/plumt/ads/AdContentRating$G : net/plumt/ads/AdContentRating {
+	public static final field INSTANCE Lnet/plumt/ads/AdContentRating$G;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdContentRating$MA : net/plumt/ads/AdContentRating {
+	public static final field INSTANCE Lnet/plumt/ads/AdContentRating$MA;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdContentRating$PG : net/plumt/ads/AdContentRating {
+	public static final field INSTANCE Lnet/plumt/ads/AdContentRating$PG;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdContentRating$T : net/plumt/ads/AdContentRating {
+	public static final field INSTANCE Lnet/plumt/ads/AdContentRating$T;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdContentRating$Unspecified : net/plumt/ads/AdContentRating {
+	public static final field INSTANCE Lnet/plumt/ads/AdContentRating$Unspecified;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdErrorReason {
 	public static final field AlreadyUsed Lnet/plumt/ads/AdErrorReason;
 	public static final field AppIdMismatch Lnet/plumt/ads/AdErrorReason;
 	public static final field AppIdMissing Lnet/plumt/ads/AdErrorReason;
 	public static final field AppInBackground Lnet/plumt/ads/AdErrorReason;
+	public static final field Companion Lnet/plumt/ads/AdErrorReason$Companion;
 	public static final field Expired Lnet/plumt/ads/AdErrorReason;
 	public static final field Internal Lnet/plumt/ads/AdErrorReason;
 	public static final field InvalidRequest Lnet/plumt/ads/AdErrorReason;
@@ -65,23 +91,23 @@ public final class net/plumt/ads/AdErrorReason : java/lang/Enum {
 	public static final field NoFill Lnet/plumt/ads/AdErrorReason;
 	public static final field Timeout Lnet/plumt/ads/AdErrorReason;
 	public static final field Unknown Lnet/plumt/ads/AdErrorReason;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public synthetic fun <init> (Ljava/lang/String;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getName ()Ljava/lang/String;
 	public final fun getRetryable ()Z
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/AdErrorReason;
-	public static fun values ()[Lnet/plumt/ads/AdErrorReason;
+	public fun toString ()Ljava/lang/String;
 }
 
-public abstract class net/plumt/ads/AdEvent {
+public final class net/plumt/ads/AdErrorReason$Companion {
+	public final fun getValues ()Ljava/util/List;
+}
+
+public abstract interface class net/plumt/ads/AdEvent {
 	public abstract fun getFormat ()Lnet/plumt/ads/AdFormat;
 	public abstract fun getPlacement ()Ljava/lang/String;
 }
 
 public final class net/plumt/ads/AdEvent$Clicked : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)Lnet/plumt/ads/AdEvent$Clicked;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$Clicked;Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdEvent$Clicked;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
 	public fun getPlacement ()Ljava/lang/String;
@@ -91,10 +117,6 @@ public final class net/plumt/ads/AdEvent$Clicked : net/plumt/ads/AdEvent {
 
 public final class net/plumt/ads/AdEvent$Dismissed : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)Lnet/plumt/ads/AdEvent$Dismissed;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$Dismissed;Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdEvent$Dismissed;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
 	public fun getPlacement ()Ljava/lang/String;
@@ -104,10 +126,6 @@ public final class net/plumt/ads/AdEvent$Dismissed : net/plumt/ads/AdEvent {
 
 public final class net/plumt/ads/AdEvent$Impression : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)Lnet/plumt/ads/AdEvent$Impression;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$Impression;Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdEvent$Impression;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
 	public fun getPlacement ()Ljava/lang/String;
@@ -117,14 +135,6 @@ public final class net/plumt/ads/AdEvent$Impression : net/plumt/ads/AdEvent {
 
 public final class net/plumt/ads/AdEvent$LoadFailed : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;Lnet/plumt/ads/AdErrorReason;)V
-	public synthetic fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;Lnet/plumt/ads/AdErrorReason;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()I
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Lnet/plumt/ads/AdErrorReason;
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;Lnet/plumt/ads/AdErrorReason;)Lnet/plumt/ads/AdEvent$LoadFailed;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$LoadFailed;Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;Lnet/plumt/ads/AdErrorReason;ILjava/lang/Object;)Lnet/plumt/ads/AdEvent$LoadFailed;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCode ()I
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
@@ -137,10 +147,6 @@ public final class net/plumt/ads/AdEvent$LoadFailed : net/plumt/ads/AdEvent {
 
 public final class net/plumt/ads/AdEvent$Loaded : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)Lnet/plumt/ads/AdEvent$Loaded;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$Loaded;Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdEvent$Loaded;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
 	public fun getPlacement ()Ljava/lang/String;
@@ -150,12 +156,6 @@ public final class net/plumt/ads/AdEvent$Loaded : net/plumt/ads/AdEvent {
 
 public final class net/plumt/ads/AdEvent$Misconfigured : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()I
-	public final fun component4 ()Ljava/lang/String;
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;)Lnet/plumt/ads/AdEvent$Misconfigured;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$Misconfigured;Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdEvent$Misconfigured;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCode ()I
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
@@ -167,10 +167,6 @@ public final class net/plumt/ads/AdEvent$Misconfigured : net/plumt/ads/AdEvent {
 
 public final class net/plumt/ads/AdEvent$Requested : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)Lnet/plumt/ads/AdEvent$Requested;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$Requested;Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdEvent$Requested;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
 	public fun getPlacement ()Ljava/lang/String;
@@ -180,12 +176,6 @@ public final class net/plumt/ads/AdEvent$Requested : net/plumt/ads/AdEvent {
 
 public final class net/plumt/ads/AdEvent$RewardEarned : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;Ljava/lang/String;I)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()I
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;Ljava/lang/String;I)Lnet/plumt/ads/AdEvent$RewardEarned;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$RewardEarned;Lnet/plumt/ads/AdFormat;Ljava/lang/String;Ljava/lang/String;IILjava/lang/Object;)Lnet/plumt/ads/AdEvent$RewardEarned;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAmount ()I
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
@@ -197,14 +187,6 @@ public final class net/plumt/ads/AdEvent$RewardEarned : net/plumt/ads/AdEvent {
 
 public final class net/plumt/ads/AdEvent$ShowFailed : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;Lnet/plumt/ads/AdErrorReason;)V
-	public synthetic fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;Lnet/plumt/ads/AdErrorReason;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()I
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Lnet/plumt/ads/AdErrorReason;
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;Lnet/plumt/ads/AdErrorReason;)Lnet/plumt/ads/AdEvent$ShowFailed;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$ShowFailed;Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/String;Lnet/plumt/ads/AdErrorReason;ILjava/lang/Object;)Lnet/plumt/ads/AdEvent$ShowFailed;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCode ()I
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
@@ -217,10 +199,6 @@ public final class net/plumt/ads/AdEvent$ShowFailed : net/plumt/ads/AdEvent {
 
 public final class net/plumt/ads/AdEvent$Shown : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;)Lnet/plumt/ads/AdEvent$Shown;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$Shown;Lnet/plumt/ads/AdFormat;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdEvent$Shown;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
 	public fun getPlacement ()Ljava/lang/String;
@@ -230,11 +208,6 @@ public final class net/plumt/ads/AdEvent$Shown : net/plumt/ads/AdEvent {
 
 public final class net/plumt/ads/AdEvent$Suppressed : net/plumt/ads/AdEvent {
 	public fun <init> (Lnet/plumt/ads/AdFormat;Ljava/lang/String;Lnet/plumt/ads/SuppressReason;)V
-	public final fun component1 ()Lnet/plumt/ads/AdFormat;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Lnet/plumt/ads/SuppressReason;
-	public final fun copy (Lnet/plumt/ads/AdFormat;Ljava/lang/String;Lnet/plumt/ads/SuppressReason;)Lnet/plumt/ads/AdEvent$Suppressed;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdEvent$Suppressed;Lnet/plumt/ads/AdFormat;Ljava/lang/String;Lnet/plumt/ads/SuppressReason;ILjava/lang/Object;)Lnet/plumt/ads/AdEvent$Suppressed;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getFormat ()Lnet/plumt/ads/AdFormat;
 	public fun getPlacement ()Ljava/lang/String;
@@ -253,24 +226,44 @@ public final class net/plumt/ads/AdEventListener$Companion {
 	public final fun getNone ()Lnet/plumt/ads/AdEventListener;
 }
 
-public final class net/plumt/ads/AdFlag : java/lang/Enum {
-	public static final field No Lnet/plumt/ads/AdFlag;
-	public static final field Unspecified Lnet/plumt/ads/AdFlag;
-	public static final field Yes Lnet/plumt/ads/AdFlag;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/AdFlag;
-	public static fun values ()[Lnet/plumt/ads/AdFlag;
+public abstract interface class net/plumt/ads/AdFlag {
 }
 
-public final class net/plumt/ads/AdFormat : java/lang/Enum {
+public final class net/plumt/ads/AdFlag$No : net/plumt/ads/AdFlag {
+	public static final field INSTANCE Lnet/plumt/ads/AdFlag$No;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdFlag$Unspecified : net/plumt/ads/AdFlag {
+	public static final field INSTANCE Lnet/plumt/ads/AdFlag$Unspecified;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdFlag$Yes : net/plumt/ads/AdFlag {
+	public static final field INSTANCE Lnet/plumt/ads/AdFlag$Yes;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdFormat {
 	public static final field AppOpen Lnet/plumt/ads/AdFormat;
 	public static final field Banner Lnet/plumt/ads/AdFormat;
+	public static final field Companion Lnet/plumt/ads/AdFormat$Companion;
 	public static final field Interstitial Lnet/plumt/ads/AdFormat;
 	public static final field Native Lnet/plumt/ads/AdFormat;
 	public static final field Rewarded Lnet/plumt/ads/AdFormat;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/AdFormat;
-	public static fun values ()[Lnet/plumt/ads/AdFormat;
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdFormat$Companion {
+	public final fun getValues ()Ljava/util/List;
 }
 
 public abstract interface class net/plumt/ads/AdFrequencyPolicy {
@@ -294,29 +287,42 @@ public abstract interface class net/plumt/ads/AdFrequencyStore {
 public final class net/plumt/ads/AdFrequencyStore$Companion {
 	public static final field DEFAULT_FILE_NAME Ljava/lang/String;
 	public final fun inMemory ()Lnet/plumt/ads/AdFrequencyStore;
+	public final fun sharedPreferences (Landroid/content/Context;)Lnet/plumt/ads/AdFrequencyStore;
 	public final fun sharedPreferences (Landroid/content/Context;Ljava/lang/String;)Lnet/plumt/ads/AdFrequencyStore;
-	public static synthetic fun sharedPreferences$default (Lnet/plumt/ads/AdFrequencyStore$Companion;Landroid/content/Context;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdFrequencyStore;
 }
 
-public final class net/plumt/ads/AdTarget : java/lang/Enum {
-	public static final field Adult Lnet/plumt/ads/AdTarget;
-	public static final field AllAges Lnet/plumt/ads/AdTarget;
-	public static final field Teen Lnet/plumt/ads/AdTarget;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/AdTarget;
-	public static fun values ()[Lnet/plumt/ads/AdTarget;
+public abstract interface class net/plumt/ads/AdTarget {
+}
+
+public final class net/plumt/ads/AdTarget$Adult : net/plumt/ads/AdTarget {
+	public static final field INSTANCE Lnet/plumt/ads/AdTarget$Adult;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdTarget$AllAges : net/plumt/ads/AdTarget {
+	public static final field INSTANCE Lnet/plumt/ads/AdTarget$AllAges;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdTarget$Teen : net/plumt/ads/AdTarget {
+	public static final field INSTANCE Lnet/plumt/ads/AdTarget$Teen;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class net/plumt/ads/AdUnit {
 	public static final field Companion Lnet/plumt/ads/AdUnit$Companion;
+	public fun <init> (Ljava/lang/String;Lnet/plumt/ads/AdFormat;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lnet/plumt/ads/AdFormat;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Lnet/plumt/ads/AdFormat;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lnet/plumt/ads/AdFormat;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Lnet/plumt/ads/AdFormat;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdUnit;Ljava/lang/String;Lnet/plumt/ads/AdFormat;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdUnit;
+	public static final fun appOpen (Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
+	public static final fun appOpen (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
+	public static final fun banner (Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
+	public static final fun banner (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDevelopment ()Ljava/lang/String;
 	public final fun getFormat ()Lnet/plumt/ads/AdFormat;
@@ -324,26 +330,33 @@ public final class net/plumt/ads/AdUnit {
 	public final fun getProduction ()Ljava/lang/String;
 	public fun hashCode ()I
 	public final fun idFor (Lnet/plumt/ads/AdsMode;)Ljava/lang/String;
+	public static final fun interstitial (Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
+	public static final fun interstitial (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
+	public static final fun native (Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
+	public static final fun native (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
 	public final fun problemFor (Lnet/plumt/ads/AdsMode;)Lnet/plumt/ads/AdsException;
 	public final fun requireFormat ([Lnet/plumt/ads/AdFormat;)Lnet/plumt/ads/AdUnit;
+	public static final fun rewarded (Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
+	public static final fun rewarded (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class net/plumt/ads/AdUnit$Companion {
+	public final fun appOpen (Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
 	public final fun appOpen (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
-	public static synthetic fun appOpen$default (Lnet/plumt/ads/AdUnit$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdUnit;
+	public final fun banner (Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
 	public final fun banner (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
-	public static synthetic fun banner$default (Lnet/plumt/ads/AdUnit$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdUnit;
+	public final fun interstitial (Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
 	public final fun interstitial (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
-	public static synthetic fun interstitial$default (Lnet/plumt/ads/AdUnit$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdUnit;
+	public final fun native (Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
 	public final fun native (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
-	public static synthetic fun native$default (Lnet/plumt/ads/AdUnit$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdUnit;
+	public final fun rewarded (Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
 	public final fun rewarded (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
-	public static synthetic fun rewarded$default (Lnet/plumt/ads/AdUnit$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lnet/plumt/ads/AdUnit;
 }
 
 public final class net/plumt/ads/AdUnitRegistry {
 	public static final field Companion Lnet/plumt/ads/AdUnitRegistry$Companion;
+	public static final field Empty Lnet/plumt/ads/AdUnitRegistry;
 	public fun <init> (Ljava/util/List;)V
 	public fun <init> ([Lnet/plumt/ads/AdUnit;)V
 	public final fun find (Ljava/lang/String;)Lnet/plumt/ads/AdUnit;
@@ -354,23 +367,29 @@ public final class net/plumt/ads/AdUnitRegistry {
 }
 
 public final class net/plumt/ads/AdUnitRegistry$Companion {
-	public final fun getEmpty ()Lnet/plumt/ads/AdUnitRegistry;
+}
+
+public abstract interface class net/plumt/ads/AdsCallHandle {
+	public abstract fun cancel ()V
+	public abstract fun isActive ()Z
 }
 
 public abstract interface class net/plumt/ads/AdsClient : java/lang/AutoCloseable {
 	public static final field Companion Lnet/plumt/ads/AdsClient$Companion;
 	public static final field DEFAULT_SWITCH_TIMEOUT_MILLIS J
+	public fun adUnitId (Lnet/plumt/ads/AdUnit;)Ljava/lang/String;
 	public abstract fun adUnitId (Lnet/plumt/ads/AdUnit;Ljava/lang/String;)Ljava/lang/String;
-	public static synthetic fun adUnitId$default (Lnet/plumt/ads/AdsClient;Lnet/plumt/ads/AdUnit;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
 	public abstract fun close ()V
 	public abstract fun defaultPolicy (Lnet/plumt/ads/AdFormat;)Lnet/plumt/ads/AdFrequencyPolicy;
 	public abstract fun defaultPolicy (Lnet/plumt/ads/AdUnit;Lnet/plumt/ads/FrequencyScope;)Lnet/plumt/ads/AdFrequencyPolicy;
-	public abstract fun fullScreenController (Lnet/plumt/ads/AdUnit;Ljava/lang/String;Lnet/plumt/ads/AdFrequencyPolicy;Lnet/plumt/ads/PreloadPolicy;Ljava/util/List;Lnet/plumt/ads/FrequencyScope;)Lnet/plumt/ads/FullScreenAdController;
-	public static synthetic fun fullScreenController$default (Lnet/plumt/ads/AdsClient;Lnet/plumt/ads/AdUnit;Ljava/lang/String;Lnet/plumt/ads/AdFrequencyPolicy;Lnet/plumt/ads/PreloadPolicy;Ljava/util/List;Lnet/plumt/ads/FrequencyScope;ILjava/lang/Object;)Lnet/plumt/ads/FullScreenAdController;
+	public fun fullScreenController (Lnet/plumt/ads/AdUnit;)Lnet/plumt/ads/FullScreenAdController;
+	public abstract fun fullScreenController (Lnet/plumt/ads/AdUnit;Lnet/plumt/ads/FullScreenAdOptions;)Lnet/plumt/ads/FullScreenAdController;
 	public abstract fun gatherConsent (Landroid/app/Activity;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun gatherConsent$default (Lnet/plumt/ads/AdsClient;Landroid/app/Activity;JLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public abstract fun gatherConsentOnFirstResume (Landroid/app/Application;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun gatherConsentOnFirstResume$default (Lnet/plumt/ads/AdsClient;Landroid/app/Application;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public abstract fun gatherConsent (Landroid/app/Activity;JLkotlin/jvm/functions/Function1;)Lnet/plumt/ads/AdsCallHandle;
+	public fun gatherConsent (Landroid/app/Activity;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun gatherConsent (Landroid/app/Activity;Lkotlin/jvm/functions/Function1;)Lnet/plumt/ads/AdsCallHandle;
+	public fun gatherConsentOnFirstResume (Landroid/app/Application;)Lnet/plumt/ads/AdsCallHandle;
+	public abstract fun gatherConsentOnFirstResume (Landroid/app/Application;Lkotlin/jvm/functions/Function1;)Lnet/plumt/ads/AdsCallHandle;
 	public abstract fun getAdsAvailable ()Lkotlinx/coroutines/flow/StateFlow;
 	public abstract fun getAdsEnabled ()Lkotlinx/coroutines/flow/StateFlow;
 	public abstract fun getConfig ()Lnet/plumt/ads/AdsConfig;
@@ -385,22 +404,15 @@ public abstract interface class net/plumt/ads/AdsClient : java/lang/AutoCloseabl
 	public abstract fun getUnits ()Lnet/plumt/ads/AdUnitRegistry;
 	public abstract fun getWarnings ()Lkotlinx/coroutines/flow/StateFlow;
 	public abstract fun initializeIfConsented ()V
+	public fun prefetchedNativeAd (Lnet/plumt/ads/AdUnit;)Lnet/plumt/ads/PrefetchedNativeAd;
+	public fun prefetchedNativeAd (Lnet/plumt/ads/AdUnit;Ljava/lang/String;)Lnet/plumt/ads/PrefetchedNativeAd;
 	public abstract fun prefetchedNativeAd (Lnet/plumt/ads/AdUnit;Ljava/lang/String;JLjava/util/List;)Lnet/plumt/ads/PrefetchedNativeAd;
-	public static synthetic fun prefetchedNativeAd$default (Lnet/plumt/ads/AdsClient;Lnet/plumt/ads/AdUnit;Ljava/lang/String;JLjava/util/List;ILjava/lang/Object;)Lnet/plumt/ads/PrefetchedNativeAd;
 }
 
 public final class net/plumt/ads/AdsClient$Companion {
 	public static final field DEFAULT_SWITCH_TIMEOUT_MILLIS J
-	public final fun create (Landroid/content/Context;Lnet/plumt/ads/AdsConfig;Lnet/plumt/ads/AdsEnabledSource;Lnet/plumt/ads/AdEventListener;Lnet/plumt/ads/network/AdNetwork;Lnet/plumt/ads/AdFrequencyStore;Lnet/plumt/ads/AdUnitRegistry;Lnet/plumt/ads/AdConnectivity;)Lnet/plumt/ads/AdsClient;
-	public static synthetic fun create$default (Lnet/plumt/ads/AdsClient$Companion;Landroid/content/Context;Lnet/plumt/ads/AdsConfig;Lnet/plumt/ads/AdsEnabledSource;Lnet/plumt/ads/AdEventListener;Lnet/plumt/ads/network/AdNetwork;Lnet/plumt/ads/AdFrequencyStore;Lnet/plumt/ads/AdUnitRegistry;Lnet/plumt/ads/AdConnectivity;ILjava/lang/Object;)Lnet/plumt/ads/AdsClient;
-}
-
-public final class net/plumt/ads/AdsClient$DefaultImpls {
-	public static synthetic fun adUnitId$default (Lnet/plumt/ads/AdsClient;Lnet/plumt/ads/AdUnit;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
-	public static synthetic fun fullScreenController$default (Lnet/plumt/ads/AdsClient;Lnet/plumt/ads/AdUnit;Ljava/lang/String;Lnet/plumt/ads/AdFrequencyPolicy;Lnet/plumt/ads/PreloadPolicy;Ljava/util/List;Lnet/plumt/ads/FrequencyScope;ILjava/lang/Object;)Lnet/plumt/ads/FullScreenAdController;
-	public static synthetic fun gatherConsent$default (Lnet/plumt/ads/AdsClient;Landroid/app/Activity;JLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static synthetic fun gatherConsentOnFirstResume$default (Lnet/plumt/ads/AdsClient;Landroid/app/Application;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static synthetic fun prefetchedNativeAd$default (Lnet/plumt/ads/AdsClient;Lnet/plumt/ads/AdUnit;Ljava/lang/String;JLjava/util/List;ILjava/lang/Object;)Lnet/plumt/ads/PrefetchedNativeAd;
+	public final fun create (Landroid/content/Context;)Lnet/plumt/ads/AdsClient;
+	public final fun create (Landroid/content/Context;Lnet/plumt/ads/AdsConfig;)Lnet/plumt/ads/AdsClient;
 }
 
 public final class net/plumt/ads/AdsConfig {
@@ -409,30 +421,50 @@ public final class net/plumt/ads/AdsConfig {
 	public static final field DEFAULT_APP_OPEN_MIN_INTERVAL_MILLIS J
 	public static final field DEFAULT_APP_OPEN_SKIP_FIRST_LAUNCHES I
 	public fun <init> ()V
-	public fun <init> (Lnet/plumt/ads/AdsMode;Lnet/plumt/ads/AdAudience;Ljava/util/List;Lnet/plumt/ads/ConsentDebugGeography;JJI)V
-	public synthetic fun <init> (Lnet/plumt/ads/AdsMode;Lnet/plumt/ads/AdAudience;Ljava/util/List;Lnet/plumt/ads/ConsentDebugGeography;JJIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lnet/plumt/ads/AdsMode;
-	public final fun component2 ()Lnet/plumt/ads/AdAudience;
-	public final fun component3 ()Ljava/util/List;
-	public final fun component4 ()Lnet/plumt/ads/ConsentDebugGeography;
-	public final fun component5 ()J
-	public final fun component6 ()J
-	public final fun component7 ()I
-	public final fun copy (Lnet/plumt/ads/AdsMode;Lnet/plumt/ads/AdAudience;Ljava/util/List;Lnet/plumt/ads/ConsentDebugGeography;JJI)Lnet/plumt/ads/AdsConfig;
-	public static synthetic fun copy$default (Lnet/plumt/ads/AdsConfig;Lnet/plumt/ads/AdsMode;Lnet/plumt/ads/AdAudience;Ljava/util/List;Lnet/plumt/ads/ConsentDebugGeography;JJIILjava/lang/Object;)Lnet/plumt/ads/AdsConfig;
+	public synthetic fun <init> (Lnet/plumt/ads/AdsConfig$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder ()Lnet/plumt/ads/AdsConfig$Builder;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAppOpenCooldownMillis ()J
 	public final fun getAppOpenMinIntervalMillis ()J
 	public final fun getAppOpenSkipFirstLaunches ()I
 	public final fun getAudience ()Lnet/plumt/ads/AdAudience;
+	public final fun getConnectivity ()Lnet/plumt/ads/AdConnectivity;
 	public final fun getConsentDebugGeography ()Lnet/plumt/ads/ConsentDebugGeography;
+	public final fun getEnabledSource ()Lnet/plumt/ads/AdsEnabledSource;
+	public final fun getEvents ()Lnet/plumt/ads/AdEventListener;
+	public final fun getFrequencyStore ()Lnet/plumt/ads/AdFrequencyStore;
 	public final fun getMode ()Lnet/plumt/ads/AdsMode;
+	public final fun getNetwork ()Lnet/plumt/ads/network/AdNetwork;
 	public final fun getTestDeviceIds ()Ljava/util/List;
+	public final fun getUnits ()Lnet/plumt/ads/AdUnitRegistry;
 	public fun hashCode ()I
+	public final fun toBuilder ()Lnet/plumt/ads/AdsConfig$Builder;
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class net/plumt/ads/AdsConfig$Builder {
+	public final fun appOpenCooldownMillis (J)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun appOpenMinIntervalMillis (J)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun appOpenSkipFirstLaunches (I)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun audience (Lnet/plumt/ads/AdAudience;)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun build ()Lnet/plumt/ads/AdsConfig;
+	public final fun connectivity (Lnet/plumt/ads/AdConnectivity;)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun consentDebugGeography (Lnet/plumt/ads/ConsentDebugGeography;)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun enabledSource (Lnet/plumt/ads/AdsEnabledSource;)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun events (Lnet/plumt/ads/AdEventListener;)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun frequencyStore (Lnet/plumt/ads/AdFrequencyStore;)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun mode (Lnet/plumt/ads/AdsMode;)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun network (Lnet/plumt/ads/network/AdNetwork;)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun testDeviceIds (Ljava/util/List;)Lnet/plumt/ads/AdsConfig$Builder;
+	public final fun units (Lnet/plumt/ads/AdUnitRegistry;)Lnet/plumt/ads/AdsConfig$Builder;
+}
+
 public final class net/plumt/ads/AdsConfig$Companion {
+	public final fun builder ()Lnet/plumt/ads/AdsConfig$Builder;
+}
+
+public final class net/plumt/ads/AdsConfigKt {
+	public static final fun adsConfig (Lkotlin/jvm/functions/Function1;)Lnet/plumt/ads/AdsConfig;
 }
 
 public abstract interface class net/plumt/ads/AdsEnabledSource {
@@ -448,16 +480,21 @@ public final class net/plumt/ads/AdsEnabledSource$Companion {
 	public final fun of (Z)Lnet/plumt/ads/AdsEnabledSource;
 }
 
-public final class net/plumt/ads/AdsErrorKind : java/lang/Enum {
+public final class net/plumt/ads/AdsErrorKind {
+	public static final field Companion Lnet/plumt/ads/AdsErrorKind$Companion;
 	public static final field Configuration Lnet/plumt/ads/AdsErrorKind;
 	public static final field Consent Lnet/plumt/ads/AdsErrorKind;
 	public static final field EnabledSource Lnet/plumt/ads/AdsErrorKind;
 	public static final field Initialization Lnet/plumt/ads/AdsErrorKind;
 	public static final field Load Lnet/plumt/ads/AdsErrorKind;
 	public static final field Show Lnet/plumt/ads/AdsErrorKind;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/AdsErrorKind;
-	public static fun values ()[Lnet/plumt/ads/AdsErrorKind;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdsErrorKind$Companion {
+	public final fun getValues ()Ljava/util/List;
 }
 
 public final class net/plumt/ads/AdsException : java/lang/Exception {
@@ -469,8 +506,9 @@ public final class net/plumt/ads/AdsException : java/lang/Exception {
 	public static final field CODE_TIMEOUT I
 	public static final field CODE_UNKNOWN I
 	public static final field Companion Lnet/plumt/ads/AdsException$Companion;
+	public fun <init> (Lnet/plumt/ads/AdsErrorKind;ILjava/lang/String;)V
+	public fun <init> (Lnet/plumt/ads/AdsErrorKind;ILjava/lang/String;Ljava/lang/Throwable;)V
 	public fun <init> (Lnet/plumt/ads/AdsErrorKind;ILjava/lang/String;Ljava/lang/Throwable;Lnet/plumt/ads/AdErrorReason;)V
-	public synthetic fun <init> (Lnet/plumt/ads/AdsErrorKind;ILjava/lang/String;Ljava/lang/Throwable;Lnet/plumt/ads/AdErrorReason;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getCode ()I
 	public final fun getKind ()Lnet/plumt/ads/AdsErrorKind;
 	public final fun getReason ()Lnet/plumt/ads/AdErrorReason;
@@ -484,54 +522,166 @@ public final class net/plumt/ads/AdsExceptionKt {
 	public static final fun classifyOffline (Lnet/plumt/ads/AdsException;Z)Lnet/plumt/ads/AdsException;
 }
 
-public final class net/plumt/ads/AdsMode : java/lang/Enum {
-	public static final field Auto Lnet/plumt/ads/AdsMode;
+public abstract interface class net/plumt/ads/AdsMode {
 	public static final field Companion Lnet/plumt/ads/AdsMode$Companion;
-	public static final field Development Lnet/plumt/ads/AdsMode;
-	public static final field Production Lnet/plumt/ads/AdsMode;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/AdsMode;
-	public static fun values ()[Lnet/plumt/ads/AdsMode;
+}
+
+public final class net/plumt/ads/AdsMode$Auto : net/plumt/ads/AdsMode {
+	public static final field INSTANCE Lnet/plumt/ads/AdsMode$Auto;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class net/plumt/ads/AdsMode$Companion {
 	public final fun of (Z)Lnet/plumt/ads/AdsMode;
 }
 
-public final class net/plumt/ads/AdsWarning : java/lang/Enum {
-	public static final field ConsentDebugGeographyIgnored Lnet/plumt/ads/AdsWarning;
-	public static final field TestDeviceIdsIgnored Lnet/plumt/ads/AdsWarning;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/AdsWarning;
-	public static fun values ()[Lnet/plumt/ads/AdsWarning;
+public final class net/plumt/ads/AdsMode$Development : net/plumt/ads/AdsMode {
+	public static final field INSTANCE Lnet/plumt/ads/AdsMode$Development;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
-public final class net/plumt/ads/ConsentDebugGeography : java/lang/Enum {
+public final class net/plumt/ads/AdsMode$Production : net/plumt/ads/AdsMode {
+	public static final field INSTANCE Lnet/plumt/ads/AdsMode$Production;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdsWarning {
+	public static final field Companion Lnet/plumt/ads/AdsWarning$Companion;
+	public static final field ConsentDebugGeographyIgnored Lnet/plumt/ads/AdsWarning;
+	public static final field TestDeviceIdsIgnored Lnet/plumt/ads/AdsWarning;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/AdsWarning$Companion {
+	public final fun getValues ()Ljava/util/List;
+}
+
+public final class net/plumt/ads/ConsentDebugGeography {
+	public static final field Companion Lnet/plumt/ads/ConsentDebugGeography$Companion;
 	public static final field Disabled Lnet/plumt/ads/ConsentDebugGeography;
 	public static final field Eea Lnet/plumt/ads/ConsentDebugGeography;
 	public static final field NotEea Lnet/plumt/ads/ConsentDebugGeography;
 	public static final field RegulatedUsState Lnet/plumt/ads/ConsentDebugGeography;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/ConsentDebugGeography;
-	public static fun values ()[Lnet/plumt/ads/ConsentDebugGeography;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
 }
 
-public final class net/plumt/ads/ConsentGatherResult : java/lang/Enum {
-	public static final field AlreadyInProgress Lnet/plumt/ads/ConsentGatherResult;
-	public static final field Completed Lnet/plumt/ads/ConsentGatherResult;
-	public static final field SkippedAdsDisabled Lnet/plumt/ads/ConsentGatherResult;
-	public static final field SkippedSwitchTimeout Lnet/plumt/ads/ConsentGatherResult;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/ConsentGatherResult;
-	public static fun values ()[Lnet/plumt/ads/ConsentGatherResult;
+public final class net/plumt/ads/ConsentDebugGeography$Companion {
+	public final fun getValues ()Ljava/util/List;
 }
 
-public final class net/plumt/ads/FrequencyScope : java/lang/Enum {
-	public static final field PerFormat Lnet/plumt/ads/FrequencyScope;
-	public static final field PerUnit Lnet/plumt/ads/FrequencyScope;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/FrequencyScope;
-	public static fun values ()[Lnet/plumt/ads/FrequencyScope;
+public abstract interface class net/plumt/ads/ConsentGatherResult {
+}
+
+public final class net/plumt/ads/ConsentGatherResult$AlreadyInProgress : net/plumt/ads/ConsentGatherResult {
+	public static final field INSTANCE Lnet/plumt/ads/ConsentGatherResult$AlreadyInProgress;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/ConsentGatherResult$Completed : net/plumt/ads/ConsentGatherResult {
+	public static final field INSTANCE Lnet/plumt/ads/ConsentGatherResult$Completed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/ConsentGatherResult$Failed : net/plumt/ads/ConsentGatherResult {
+	public fun <init> (Lnet/plumt/ads/AdsException;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lnet/plumt/ads/AdsException;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/ConsentGatherResult$SkippedAdsDisabled : net/plumt/ads/ConsentGatherResult {
+	public static final field INSTANCE Lnet/plumt/ads/ConsentGatherResult$SkippedAdsDisabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/ConsentGatherResult$SkippedSwitchTimeout : net/plumt/ads/ConsentGatherResult {
+	public static final field INSTANCE Lnet/plumt/ads/ConsentGatherResult$SkippedSwitchTimeout;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/FakeAdsClient : net/plumt/ads/AdsClient {
+	public static final field FAKE_BANNER_HEIGHT_DP I
+	public fun <init> ()V
+	public fun <init> (Lnet/plumt/ads/AdsConfig;)V
+	public fun <init> (Lnet/plumt/ads/AdsConfig;Lnet/plumt/ads/AdClock;)V
+	public fun adUnitId (Lnet/plumt/ads/AdUnit;Ljava/lang/String;)Ljava/lang/String;
+	public final fun clickShowingAd ()Z
+	public fun close ()V
+	public fun defaultPolicy (Lnet/plumt/ads/AdFormat;)Lnet/plumt/ads/AdFrequencyPolicy;
+	public fun defaultPolicy (Lnet/plumt/ads/AdUnit;Lnet/plumt/ads/FrequencyScope;)Lnet/plumt/ads/AdFrequencyPolicy;
+	public final fun dismissShowingAd ()Z
+	public final fun earnReward (Ljava/lang/String;I)Z
+	public fun fullScreenController (Lnet/plumt/ads/AdUnit;Lnet/plumt/ads/FullScreenAdOptions;)Lnet/plumt/ads/FullScreenAdController;
+	public fun gatherConsent (Landroid/app/Activity;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun gatherConsent (Landroid/app/Activity;JLkotlin/jvm/functions/Function1;)Lnet/plumt/ads/AdsCallHandle;
+	public fun gatherConsentOnFirstResume (Landroid/app/Application;Lkotlin/jvm/functions/Function1;)Lnet/plumt/ads/AdsCallHandle;
+	public fun getAdsAvailable ()Lkotlinx/coroutines/flow/StateFlow;
+	public fun getAdsEnabled ()Lkotlinx/coroutines/flow/StateFlow;
+	public fun getConfig ()Lnet/plumt/ads/AdsConfig;
+	public fun getConfigurationErrors ()Lkotlinx/coroutines/flow/StateFlow;
+	public fun getConnectivity ()Lnet/plumt/ads/AdConnectivity;
+	public fun getConsent ()Lnet/plumt/ads/consent/ConsentManager;
+	public fun getEnabledSourceError ()Lkotlinx/coroutines/flow/StateFlow;
+	public fun getEvents ()Lnet/plumt/ads/AdEventListener;
+	public final fun getFakeConsent ()Lnet/plumt/ads/consent/FakeConsentManager;
+	public final fun getFullScreenLoadCalls ()I
+	public final fun getGatherConsentCalls ()I
+	public final fun getGatherResult ()Lnet/plumt/ads/ConsentGatherResult;
+	public fun getInitializationError ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun getInitializeCalls ()I
+	public final fun getLoadFailure ()Lnet/plumt/ads/AdsException;
+	public fun getMode ()Lnet/plumt/ads/AdsMode;
+	public fun getNetwork ()Lnet/plumt/ads/network/AdNetwork;
+	public final fun getRecordedEvents ()Ljava/util/List;
+	public final fun getShowFailure ()Lnet/plumt/ads/AdsException;
+	public fun getUnits ()Lnet/plumt/ads/AdUnitRegistry;
+	public fun getWarnings ()Lkotlinx/coroutines/flow/StateFlow;
+	public fun initializeIfConsented ()V
+	public final fun isShowingFullScreenAd ()Z
+	public fun prefetchedNativeAd (Lnet/plumt/ads/AdUnit;Ljava/lang/String;JLjava/util/List;)Lnet/plumt/ads/PrefetchedNativeAd;
+	public final fun setAdsEnabled (Z)V
+	public final fun setGatherResult (Lnet/plumt/ads/ConsentGatherResult;)V
+	public final fun setInitializationError (Lnet/plumt/ads/AdsException;)V
+	public final fun setLoadFailure (Lnet/plumt/ads/AdsException;)V
+	public final fun setOnline (Z)V
+	public final fun setShowFailure (Lnet/plumt/ads/AdsException;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class net/plumt/ads/FrequencyScope {
+}
+
+public final class net/plumt/ads/FrequencyScope$PerFormat : net/plumt/ads/FrequencyScope {
+	public static final field INSTANCE Lnet/plumt/ads/FrequencyScope$PerFormat;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/FrequencyScope$PerUnit : net/plumt/ads/FrequencyScope {
+	public static final field INSTANCE Lnet/plumt/ads/FrequencyScope$PerUnit;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class net/plumt/ads/FullScreenAdController {
@@ -543,8 +693,8 @@ public final class net/plumt/ads/FullScreenAdController {
 	public final fun getPlacement ()Ljava/lang/String;
 	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
 	public final fun preload ()V
+	public final fun show (Landroid/app/Activity;)Lnet/plumt/ads/ShowResult;
 	public final fun show (Landroid/app/Activity;Lnet/plumt/ads/network/FullScreenAdCallbacks;)Lnet/plumt/ads/ShowResult;
-	public static synthetic fun show$default (Lnet/plumt/ads/FullScreenAdController;Landroid/app/Activity;Lnet/plumt/ads/network/FullScreenAdCallbacks;ILjava/lang/Object;)Lnet/plumt/ads/ShowResult;
 }
 
 public final class net/plumt/ads/FullScreenAdControllerKt {
@@ -552,19 +702,69 @@ public final class net/plumt/ads/FullScreenAdControllerKt {
 	public static final fun nextStep (Lnet/plumt/ads/PreloadPolicy;Lnet/plumt/ads/AdErrorReason;I)Lnet/plumt/ads/RetryStep;
 }
 
-public final class net/plumt/ads/FullScreenAdState : java/lang/Enum {
-	public static final field Idle Lnet/plumt/ads/FullScreenAdState;
-	public static final field Loading Lnet/plumt/ads/FullScreenAdState;
-	public static final field Ready Lnet/plumt/ads/FullScreenAdState;
-	public static final field Showing Lnet/plumt/ads/FullScreenAdState;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/FullScreenAdState;
-	public static fun values ()[Lnet/plumt/ads/FullScreenAdState;
+public final class net/plumt/ads/FullScreenAdOptions {
+	public static final field Companion Lnet/plumt/ads/FullScreenAdOptions$Companion;
+	public static final field Default Lnet/plumt/ads/FullScreenAdOptions;
+	public synthetic fun <init> (Lnet/plumt/ads/FullScreenAdOptions$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder ()Lnet/plumt/ads/FullScreenAdOptions$Builder;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFallbacks ()Ljava/util/List;
+	public final fun getFrequencyScope ()Lnet/plumt/ads/FrequencyScope;
+	public final fun getPlacement ()Ljava/lang/String;
+	public final fun getPolicy ()Lnet/plumt/ads/AdFrequencyPolicy;
+	public final fun getPreload ()Lnet/plumt/ads/PreloadPolicy;
+	public fun hashCode ()I
+	public final fun toBuilder ()Lnet/plumt/ads/FullScreenAdOptions$Builder;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/FullScreenAdOptions$Builder {
+	public final fun build ()Lnet/plumt/ads/FullScreenAdOptions;
+	public final fun fallbacks (Ljava/util/List;)Lnet/plumt/ads/FullScreenAdOptions$Builder;
+	public final fun frequencyScope (Lnet/plumt/ads/FrequencyScope;)Lnet/plumt/ads/FullScreenAdOptions$Builder;
+	public final fun placement (Ljava/lang/String;)Lnet/plumt/ads/FullScreenAdOptions$Builder;
+	public final fun policy (Lnet/plumt/ads/AdFrequencyPolicy;)Lnet/plumt/ads/FullScreenAdOptions$Builder;
+	public final fun preload (Lnet/plumt/ads/PreloadPolicy;)Lnet/plumt/ads/FullScreenAdOptions$Builder;
+}
+
+public final class net/plumt/ads/FullScreenAdOptions$Companion {
+	public final fun builder ()Lnet/plumt/ads/FullScreenAdOptions$Builder;
+}
+
+public abstract interface class net/plumt/ads/FullScreenAdState {
+}
+
+public final class net/plumt/ads/FullScreenAdState$Idle : net/plumt/ads/FullScreenAdState {
+	public static final field INSTANCE Lnet/plumt/ads/FullScreenAdState$Idle;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/FullScreenAdState$Loading : net/plumt/ads/FullScreenAdState {
+	public static final field INSTANCE Lnet/plumt/ads/FullScreenAdState$Loading;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/FullScreenAdState$Ready : net/plumt/ads/FullScreenAdState {
+	public static final field INSTANCE Lnet/plumt/ads/FullScreenAdState$Ready;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/FullScreenAdState$Showing : net/plumt/ads/FullScreenAdState {
+	public static final field INSTANCE Lnet/plumt/ads/FullScreenAdState$Showing;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class net/plumt/ads/InertAdsClientKt {
+	public static final fun inert (Lnet/plumt/ads/AdsClient$Companion;Landroid/content/Context;)Lnet/plumt/ads/AdsClient;
 	public static final fun inert (Lnet/plumt/ads/AdsClient$Companion;Landroid/content/Context;Lnet/plumt/ads/AdsConfig;)Lnet/plumt/ads/AdsClient;
-	public static synthetic fun inert$default (Lnet/plumt/ads/AdsClient$Companion;Landroid/content/Context;Lnet/plumt/ads/AdsConfig;ILjava/lang/Object;)Lnet/plumt/ads/AdsClient;
 }
 
 public final class net/plumt/ads/IntervalFrequencyPolicy : net/plumt/ads/AdFrequencyPolicy {
@@ -573,8 +773,8 @@ public final class net/plumt/ads/IntervalFrequencyPolicy : net/plumt/ads/AdFrequ
 	public static final field DEFAULT_KEY Ljava/lang/String;
 	public static final field DEFAULT_MIN_INTERVAL_MILLIS J
 	public fun <init> ()V
-	public fun <init> (JJILnet/plumt/ads/AdClock;Lnet/plumt/ads/AdFrequencyStore;Ljava/lang/String;)V
-	public synthetic fun <init> (JJILnet/plumt/ads/AdClock;Lnet/plumt/ads/AdFrequencyStore;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lnet/plumt/ads/IntervalFrequencyPolicy$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder ()Lnet/plumt/ads/IntervalFrequencyPolicy$Builder;
 	public fun canShow (Ljava/lang/String;)Z
 	public final fun getInitialDelayMillis ()J
 	public final fun getKey ()Ljava/lang/String;
@@ -584,14 +784,25 @@ public final class net/plumt/ads/IntervalFrequencyPolicy : net/plumt/ads/AdFrequ
 	public fun onShown (Ljava/lang/String;)V
 }
 
+public final class net/plumt/ads/IntervalFrequencyPolicy$Builder {
+	public final fun build ()Lnet/plumt/ads/IntervalFrequencyPolicy;
+	public final fun clock (Lnet/plumt/ads/AdClock;)Lnet/plumt/ads/IntervalFrequencyPolicy$Builder;
+	public final fun initialDelayMillis (J)Lnet/plumt/ads/IntervalFrequencyPolicy$Builder;
+	public final fun key (Ljava/lang/String;)Lnet/plumt/ads/IntervalFrequencyPolicy$Builder;
+	public final fun maxShows (I)Lnet/plumt/ads/IntervalFrequencyPolicy$Builder;
+	public final fun minIntervalMillis (J)Lnet/plumt/ads/IntervalFrequencyPolicy$Builder;
+	public final fun store (Lnet/plumt/ads/AdFrequencyStore;)Lnet/plumt/ads/IntervalFrequencyPolicy$Builder;
+}
+
 public final class net/plumt/ads/IntervalFrequencyPolicy$Companion {
+	public final fun builder ()Lnet/plumt/ads/IntervalFrequencyPolicy$Builder;
 }
 
 public final class net/plumt/ads/LaunchCountFrequencyPolicy : net/plumt/ads/AdFrequencyPolicy {
 	public static final field Companion Lnet/plumt/ads/LaunchCountFrequencyPolicy$Companion;
 	public static final field DEFAULT_KEY Ljava/lang/String;
+	public fun <init> (ILnet/plumt/ads/AdFrequencyStore;)V
 	public fun <init> (ILnet/plumt/ads/AdFrequencyStore;Ljava/lang/String;)V
-	public synthetic fun <init> (ILnet/plumt/ads/AdFrequencyStore;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun canShow (Ljava/lang/String;)Z
 	public final fun getKey ()Ljava/lang/String;
 	public final fun getLaunchNumber ()J
@@ -605,7 +816,6 @@ public final class net/plumt/ads/LaunchCountFrequencyPolicy$Companion {
 public final class net/plumt/ads/MutableAdsEnabledSource : net/plumt/ads/AdsEnabledSource {
 	public fun <init> ()V
 	public fun <init> (Z)V
-	public synthetic fun <init> (ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun getEnabled ()Lkotlinx/coroutines/flow/Flow;
 	public fun getEnabled ()Lkotlinx/coroutines/flow/StateFlow;
 	public final fun set (Z)V
@@ -631,19 +841,10 @@ public final class net/plumt/ads/PrefetchedNativeAd$Companion {
 }
 
 public final class net/plumt/ads/PreloadPolicy {
-	public fun <init> ()V
-	public fun <init> (ZZIJJJZJ)V
-	public synthetic fun <init> (ZZIJJJZJILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Z
-	public final fun component2 ()Z
-	public final fun component3 ()I
-	public final fun component4 ()J
-	public final fun component5 ()J
-	public final fun component6 ()J
-	public final fun component7 ()Z
-	public final fun component8 ()J
-	public final fun copy (ZZIJJJZJ)Lnet/plumt/ads/PreloadPolicy;
-	public static synthetic fun copy$default (Lnet/plumt/ads/PreloadPolicy;ZZIJJJZJILjava/lang/Object;)Lnet/plumt/ads/PreloadPolicy;
+	public static final field Companion Lnet/plumt/ads/PreloadPolicy$Companion;
+	public static final field Default Lnet/plumt/ads/PreloadPolicy;
+	public synthetic fun <init> (Lnet/plumt/ads/PreloadPolicy$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder ()Lnet/plumt/ads/PreloadPolicy$Builder;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAutoPreload ()Z
 	public final fun getExpireAfterMillis ()J
@@ -654,17 +855,31 @@ public final class net/plumt/ads/PreloadPolicy {
 	public final fun getRetryBackoffMillis ()J
 	public final fun getRetryOnNetworkRestore ()Z
 	public fun hashCode ()I
+	public final fun toBuilder ()Lnet/plumt/ads/PreloadPolicy$Builder;
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract class net/plumt/ads/RetryStep {
+public final class net/plumt/ads/PreloadPolicy$Builder {
+	public final fun autoPreload (Z)Lnet/plumt/ads/PreloadPolicy$Builder;
+	public final fun build ()Lnet/plumt/ads/PreloadPolicy;
+	public final fun expireAfterMillis (J)Lnet/plumt/ads/PreloadPolicy$Builder;
+	public final fun loadTimeoutMillis (J)Lnet/plumt/ads/PreloadPolicy$Builder;
+	public final fun maxRetries (I)Lnet/plumt/ads/PreloadPolicy$Builder;
+	public final fun noFillBackoffMillis (J)Lnet/plumt/ads/PreloadPolicy$Builder;
+	public final fun reloadAfterDismiss (Z)Lnet/plumt/ads/PreloadPolicy$Builder;
+	public final fun retryBackoffMillis (J)Lnet/plumt/ads/PreloadPolicy$Builder;
+	public final fun retryOnNetworkRestore (Z)Lnet/plumt/ads/PreloadPolicy$Builder;
+}
+
+public final class net/plumt/ads/PreloadPolicy$Companion {
+	public final fun builder ()Lnet/plumt/ads/PreloadPolicy$Builder;
+}
+
+public abstract interface class net/plumt/ads/RetryStep {
 }
 
 public final class net/plumt/ads/RetryStep$After : net/plumt/ads/RetryStep {
 	public fun <init> (J)V
-	public final fun component1 ()J
-	public final fun copy (J)Lnet/plumt/ads/RetryStep$After;
-	public static synthetic fun copy$default (Lnet/plumt/ads/RetryStep$After;JILjava/lang/Object;)Lnet/plumt/ads/RetryStep$After;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getMillis ()J
 	public fun hashCode ()I
@@ -685,14 +900,11 @@ public final class net/plumt/ads/RetryStep$Stop : net/plumt/ads/RetryStep {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract class net/plumt/ads/ShowResult {
+public abstract interface class net/plumt/ads/ShowResult {
 }
 
 public final class net/plumt/ads/ShowResult$Failed : net/plumt/ads/ShowResult {
 	public fun <init> (Lnet/plumt/ads/AdsException;)V
-	public final fun component1 ()Lnet/plumt/ads/AdsException;
-	public final fun copy (Lnet/plumt/ads/AdsException;)Lnet/plumt/ads/ShowResult$Failed;
-	public static synthetic fun copy$default (Lnet/plumt/ads/ShowResult$Failed;Lnet/plumt/ads/AdsException;ILjava/lang/Object;)Lnet/plumt/ads/ShowResult$Failed;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getError ()Lnet/plumt/ads/AdsException;
 	public fun hashCode ()I
@@ -715,23 +927,25 @@ public final class net/plumt/ads/ShowResult$Started : net/plumt/ads/ShowResult {
 
 public final class net/plumt/ads/ShowResult$Suppressed : net/plumt/ads/ShowResult {
 	public fun <init> (Lnet/plumt/ads/SuppressReason;)V
-	public final fun component1 ()Lnet/plumt/ads/SuppressReason;
-	public final fun copy (Lnet/plumt/ads/SuppressReason;)Lnet/plumt/ads/ShowResult$Suppressed;
-	public static synthetic fun copy$default (Lnet/plumt/ads/ShowResult$Suppressed;Lnet/plumt/ads/SuppressReason;ILjava/lang/Object;)Lnet/plumt/ads/ShowResult$Suppressed;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getReason ()Lnet/plumt/ads/SuppressReason;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class net/plumt/ads/SuppressReason : java/lang/Enum {
+public final class net/plumt/ads/SuppressReason {
 	public static final field AnotherAdShowing Lnet/plumt/ads/SuppressReason;
+	public static final field Companion Lnet/plumt/ads/SuppressReason$Companion;
 	public static final field FrequencyCapped Lnet/plumt/ads/SuppressReason;
 	public static final field Misconfigured Lnet/plumt/ads/SuppressReason;
 	public static final field Unavailable Lnet/plumt/ads/SuppressReason;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/SuppressReason;
-	public static fun values ()[Lnet/plumt/ads/SuppressReason;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/SuppressReason$Companion {
+	public final fun getValues ()Ljava/util/List;
 }
 
 public final class net/plumt/ads/TestAdIds {
@@ -748,20 +962,43 @@ public final class net/plumt/ads/TestAdIds {
 	public final fun isTestId (Ljava/lang/String;)Z
 }
 
+public abstract interface class net/plumt/ads/consent/ConsentFormResult {
+}
+
+public final class net/plumt/ads/consent/ConsentFormResult$AlreadyInProgress : net/plumt/ads/consent/ConsentFormResult {
+	public static final field INSTANCE Lnet/plumt/ads/consent/ConsentFormResult$AlreadyInProgress;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/consent/ConsentFormResult$Completed : net/plumt/ads/consent/ConsentFormResult {
+	public static final field INSTANCE Lnet/plumt/ads/consent/ConsentFormResult$Completed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/consent/ConsentFormResult$Failed : net/plumt/ads/consent/ConsentFormResult {
+	public fun <init> (Lnet/plumt/ads/AdsException;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lnet/plumt/ads/AdsException;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class net/plumt/ads/consent/ConsentManager {
 	public abstract fun gather (Landroid/app/Activity;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun gather (Landroid/app/Activity;Lkotlin/jvm/functions/Function1;)Lnet/plumt/ads/AdsCallHandle;
 	public abstract fun getSnapshot ()Lkotlinx/coroutines/flow/StateFlow;
 	public abstract fun showPrivacyOptions (Landroid/app/Activity;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun showPrivacyOptions (Landroid/app/Activity;Lkotlin/jvm/functions/Function1;)Lnet/plumt/ads/AdsCallHandle;
 }
 
 public final class net/plumt/ads/consent/ConsentSnapshot {
 	public static final field Companion Lnet/plumt/ads/consent/ConsentSnapshot$Companion;
+	public static final field Initial Lnet/plumt/ads/consent/ConsentSnapshot;
 	public fun <init> (Lnet/plumt/ads/consent/ConsentStatus;ZZ)V
-	public final fun component1 ()Lnet/plumt/ads/consent/ConsentStatus;
-	public final fun component2 ()Z
-	public final fun component3 ()Z
-	public final fun copy (Lnet/plumt/ads/consent/ConsentStatus;ZZ)Lnet/plumt/ads/consent/ConsentSnapshot;
-	public static synthetic fun copy$default (Lnet/plumt/ads/consent/ConsentSnapshot;Lnet/plumt/ads/consent/ConsentStatus;ZZILjava/lang/Object;)Lnet/plumt/ads/consent/ConsentSnapshot;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCanRequestAds ()Z
 	public final fun getPrivacyOptionsRequired ()Z
@@ -771,17 +1008,65 @@ public final class net/plumt/ads/consent/ConsentSnapshot {
 }
 
 public final class net/plumt/ads/consent/ConsentSnapshot$Companion {
-	public final fun getInitial ()Lnet/plumt/ads/consent/ConsentSnapshot;
 }
 
-public final class net/plumt/ads/consent/ConsentStatus : java/lang/Enum {
-	public static final field NotRequired Lnet/plumt/ads/consent/ConsentStatus;
-	public static final field Obtained Lnet/plumt/ads/consent/ConsentStatus;
-	public static final field Required Lnet/plumt/ads/consent/ConsentStatus;
-	public static final field Unknown Lnet/plumt/ads/consent/ConsentStatus;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lnet/plumt/ads/consent/ConsentStatus;
-	public static fun values ()[Lnet/plumt/ads/consent/ConsentStatus;
+public abstract interface class net/plumt/ads/consent/ConsentStatus {
+}
+
+public final class net/plumt/ads/consent/ConsentStatus$NotRequired : net/plumt/ads/consent/ConsentStatus {
+	public static final field INSTANCE Lnet/plumt/ads/consent/ConsentStatus$NotRequired;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/consent/ConsentStatus$Obtained : net/plumt/ads/consent/ConsentStatus {
+	public static final field INSTANCE Lnet/plumt/ads/consent/ConsentStatus$Obtained;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/consent/ConsentStatus$Required : net/plumt/ads/consent/ConsentStatus {
+	public static final field INSTANCE Lnet/plumt/ads/consent/ConsentStatus$Required;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/consent/ConsentStatus$Unknown : net/plumt/ads/consent/ConsentStatus {
+	public static final field INSTANCE Lnet/plumt/ads/consent/ConsentStatus$Unknown;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/consent/FakeConsentManager : net/plumt/ads/consent/ConsentManager {
+	public static final field Allowed Lnet/plumt/ads/consent/ConsentSnapshot;
+	public static final field Companion Lnet/plumt/ads/consent/FakeConsentManager$Companion;
+	public static final field Denied Lnet/plumt/ads/consent/ConsentSnapshot;
+	public fun <init> ()V
+	public fun <init> (Lnet/plumt/ads/consent/ConsentSnapshot;)V
+	public fun gather (Landroid/app/Activity;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun gather (Landroid/app/Activity;Lkotlin/jvm/functions/Function1;)Lnet/plumt/ads/AdsCallHandle;
+	public final fun getGatherCalls ()I
+	public final fun getGatherResult ()Lnet/plumt/ads/consent/ConsentFormResult;
+	public final fun getPrivacyOptionsCalls ()I
+	public final fun getPrivacyOptionsResult ()Lnet/plumt/ads/consent/ConsentFormResult;
+	public fun getSnapshot ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun getSnapshotAfterGather ()Lnet/plumt/ads/consent/ConsentSnapshot;
+	public final fun getSnapshotAfterPrivacyOptions ()Lnet/plumt/ads/consent/ConsentSnapshot;
+	public final fun setGatherResult (Lnet/plumt/ads/consent/ConsentFormResult;)V
+	public final fun setPrivacyOptionsResult (Lnet/plumt/ads/consent/ConsentFormResult;)V
+	public final fun setSnapshot (Lnet/plumt/ads/consent/ConsentSnapshot;)V
+	public final fun setSnapshotAfterGather (Lnet/plumt/ads/consent/ConsentSnapshot;)V
+	public final fun setSnapshotAfterPrivacyOptions (Lnet/plumt/ads/consent/ConsentSnapshot;)V
+	public fun showPrivacyOptions (Landroid/app/Activity;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun showPrivacyOptions (Landroid/app/Activity;Lkotlin/jvm/functions/Function1;)Lnet/plumt/ads/AdsCallHandle;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class net/plumt/ads/consent/FakeConsentManager$Companion {
 }
 
 public final class net/plumt/ads/mobileads/MobileAdsNetwork : net/plumt/ads/network/AdNetwork {
@@ -819,13 +1104,6 @@ public abstract interface class net/plumt/ads/network/BannerListener {
 	public fun onLoaded ()V
 }
 
-public final class net/plumt/ads/network/BannerListener$DefaultImpls {
-	public static fun onClicked (Lnet/plumt/ads/network/BannerListener;)V
-	public static fun onImpression (Lnet/plumt/ads/network/BannerListener;)V
-	public static fun onLoadFailed (Lnet/plumt/ads/network/BannerListener;Lnet/plumt/ads/AdsException;)V
-	public static fun onLoaded (Lnet/plumt/ads/network/BannerListener;)V
-}
-
 public abstract interface class net/plumt/ads/network/BannerProvider {
 	public abstract fun create (Landroid/content/Context;Ljava/lang/String;ILnet/plumt/ads/network/BannerListener;)Lnet/plumt/ads/network/BannerHandle;
 }
@@ -844,22 +1122,13 @@ public abstract interface class net/plumt/ads/network/FullScreenAdCallbacks {
 	public fun onShown ()V
 }
 
-public final class net/plumt/ads/network/FullScreenAdCallbacks$DefaultImpls {
-	public static fun onClicked (Lnet/plumt/ads/network/FullScreenAdCallbacks;)V
-	public static fun onDismissed (Lnet/plumt/ads/network/FullScreenAdCallbacks;)V
-	public static fun onImpression (Lnet/plumt/ads/network/FullScreenAdCallbacks;)V
-	public static fun onRewardEarned (Lnet/plumt/ads/network/FullScreenAdCallbacks;Ljava/lang/String;I)V
-	public static fun onShowFailed (Lnet/plumt/ads/network/FullScreenAdCallbacks;Lnet/plumt/ads/AdsException;)V
-	public static fun onShown (Lnet/plumt/ads/network/FullScreenAdCallbacks;)V
-}
-
 public abstract interface class net/plumt/ads/network/FullScreenAdProvider {
 	public abstract fun load (Landroid/content/Context;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class net/plumt/ads/network/NativeAdAssets {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Landroid/graphics/drawable/Drawable;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Landroid/graphics/drawable/Drawable;Z)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Landroid/graphics/drawable/Drawable;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getAdvertiser ()Ljava/lang/String;
 	public final fun getBody ()Ljava/lang/String;
 	public final fun getCallToAction ()Ljava/lang/String;
@@ -882,14 +1151,10 @@ public abstract interface class net/plumt/ads/network/NativeAdProvider {
 	public abstract fun load (Landroid/content/Context;Ljava/lang/String;ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class net/plumt/ads/network/NativeAdProvider$DefaultImpls {
-	public static fun createMediaView (Lnet/plumt/ads/network/NativeAdProvider;Landroid/content/Context;)Landroid/view/View;
-}
-
 public final class net/plumt/ads/network/NativeAdViews {
-	public fun <init> ()V
-	public fun <init> (Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;)V
-	public synthetic fun <init> (Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;Landroid/view/View;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final field Companion Lnet/plumt/ads/network/NativeAdViews$Companion;
+	public synthetic fun <init> (Lnet/plumt/ads/network/NativeAdViews$Builder;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun builder ()Lnet/plumt/ads/network/NativeAdViews$Builder;
 	public final fun getAdvertiser ()Landroid/view/View;
 	public final fun getBody ()Landroid/view/View;
 	public final fun getCallToAction ()Landroid/view/View;
@@ -899,5 +1164,22 @@ public final class net/plumt/ads/network/NativeAdViews {
 	public final fun getPrice ()Landroid/view/View;
 	public final fun getStarRating ()Landroid/view/View;
 	public final fun getStore ()Landroid/view/View;
+}
+
+public final class net/plumt/ads/network/NativeAdViews$Builder {
+	public final fun advertiser (Landroid/view/View;)Lnet/plumt/ads/network/NativeAdViews$Builder;
+	public final fun body (Landroid/view/View;)Lnet/plumt/ads/network/NativeAdViews$Builder;
+	public final fun build ()Lnet/plumt/ads/network/NativeAdViews;
+	public final fun callToAction (Landroid/view/View;)Lnet/plumt/ads/network/NativeAdViews$Builder;
+	public final fun headline (Landroid/view/View;)Lnet/plumt/ads/network/NativeAdViews$Builder;
+	public final fun icon (Landroid/view/View;)Lnet/plumt/ads/network/NativeAdViews$Builder;
+	public final fun media (Landroid/view/View;)Lnet/plumt/ads/network/NativeAdViews$Builder;
+	public final fun price (Landroid/view/View;)Lnet/plumt/ads/network/NativeAdViews$Builder;
+	public final fun starRating (Landroid/view/View;)Lnet/plumt/ads/network/NativeAdViews$Builder;
+	public final fun store (Landroid/view/View;)Lnet/plumt/ads/network/NativeAdViews$Builder;
+}
+
+public final class net/plumt/ads/network/NativeAdViews$Companion {
+	public final fun builder ()Lnet/plumt/ads/network/NativeAdViews$Builder;
 }
 

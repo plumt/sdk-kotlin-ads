@@ -50,7 +50,7 @@ class NativePoolCompletionTest {
         val never = CompletableDeferred<List<NativeAdHandle>>()
         val job = launch {
             pool.runLoop(
-                listOf("missing", "backup"), "p", events, PreloadPolicy(loadTimeoutMillis = 2_000), 3_600_000,
+                listOf("missing", "backup"), "p", events, PreloadPolicy.builder().loadTimeoutMillis(2_000).build(), 3_600_000,
                 { MutableStateFlow(true) }, {},
             ) { id ->
                 asked += id
@@ -74,7 +74,7 @@ class NativePoolCompletionTest {
         val failures = mutableListOf<AdsException>()
         val job = launch {
             pool.runLoop(
-                listOf("missing"), "p", AdEventListener.None, PreloadPolicy(loadTimeoutMillis = 1_000, maxRetries = 0), 3_600_000,
+                listOf("missing"), "p", AdEventListener.None, PreloadPolicy.builder().loadTimeoutMillis(1_000).maxRetries(0).build(), 3_600_000,
                 { MutableStateFlow(true) }, { failures += it },
             ) { CompletableDeferred<List<NativeAdHandle>>().await() }
         }
@@ -100,10 +100,10 @@ class NativePoolCompletionTest {
         val asked = mutableListOf<String>()
         val job = launch {
             pool.runLoop(
-                listOf("a", "b"), "p", events, PreloadPolicy(retryBackoffMillis = 5_000), 3_600_000, { online }, {},
+                listOf("a", "b"), "p", events, PreloadPolicy.builder().retryBackoffMillis(5_000).build(), 3_600_000, { online }, {},
             ) { id ->
                 asked += id
-                if (!online.value) throw AdsException(AdsErrorKind.Load, 0, "Internal error.", reason = AdErrorReason.Internal)
+                if (!online.value) throw AdsException(AdsErrorKind.Load, 0, "Internal error.", null, AdErrorReason.Internal)
                 listOf(Handle(id))
             }
         }

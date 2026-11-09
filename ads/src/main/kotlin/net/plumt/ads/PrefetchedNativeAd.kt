@@ -29,14 +29,32 @@ public class PrefetchedNativeAd internal constructor(
     public val placement: String,
     public val ttlMillis: Long,
     private val chain: List<String>,
-    private val context: Context,
-    private val provider: NativeAdProvider,
+    /** 단위 ID 와 개수로 광고를 불러온다. 네트워크 공급자에 컨텍스트를 묶어 넘긴다. */
+    private val loader: suspend (String, Int) -> List<NativeAdHandle>,
     private val available: StateFlow<Boolean>,
     private val events: AdEventListener,
     private val clock: AdClock,
     private val scope: CoroutineScope,
     private val loadTimeoutMillis: Long = DEFAULT_LOAD_TIMEOUT_MILLIS,
 ) {
+    @Suppress("LongParameterList")
+    internal constructor(
+        unit: AdUnit,
+        placement: String,
+        ttlMillis: Long,
+        chain: List<String>,
+        context: Context,
+        provider: NativeAdProvider,
+        available: StateFlow<Boolean>,
+        events: AdEventListener,
+        clock: AdClock,
+        scope: CoroutineScope,
+        loadTimeoutMillis: Long = DEFAULT_LOAD_TIMEOUT_MILLIS,
+    ) : this(
+        unit, placement, ttlMillis, chain, { id, count -> provider.load(context, id, count) }, available, events, clock, scope,
+        loadTimeoutMillis,
+    )
+
     private val adFlow = MutableStateFlow<NativeAdHandle?>(null)
     private val errorFlow = MutableStateFlow<AdsException?>(null)
     private var storedAt = 0L
@@ -131,10 +149,10 @@ public class PrefetchedNativeAd internal constructor(
 
     /** 공급자가 끝내 응답하지 않아도 [loading] 에 머물지 않게 제한 시간을 둔다. 넘기면 다음 대체 단위로 넘어간다. */
     private suspend fun loadWithTimeout(id: String): List<NativeAdHandle> {
-        if (loadTimeoutMillis <= 0L) return provider.load(context, id, 1)
+        if (loadTimeoutMillis <= 0L) return loader(id, 1)
         var arrived: List<NativeAdHandle>? = null
         try {
-            return withTimeout(loadTimeoutMillis) { provider.load(context, id, 1).also { arrived = it } }
+            return withTimeout(loadTimeoutMillis) { loader(id, 1).also { arrived = it } }
         } catch (e: TimeoutCancellationException) {
             arrived?.forEach { it.destroy() }
             throw AdsException(

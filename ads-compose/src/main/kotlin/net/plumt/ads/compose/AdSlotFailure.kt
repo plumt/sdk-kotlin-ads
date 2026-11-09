@@ -3,28 +3,32 @@ package net.plumt.ads.compose
 import androidx.compose.ui.unit.Dp
 import net.plumt.ads.AdsException
 
-/** 광고 슬롯이 광고를 받지 못했을 때(불러오기 실패·채울 광고 없음) 화면에서 어떻게 할지. */
-public enum class AdSlotFailure {
+/** 광고 슬롯이 광고를 받지 못했을 때(불러오기 실패·채울 광고 없음) 화면에서 어떻게 할지. 닫힌 집합이다. */
+public sealed interface AdSlotFailure {
     /** 자리를 접는다(높이 0). 주변 콘텐츠가 당겨 올라온다. 목록 사이 광고에 알맞다. */
-    Collapse,
+    public data object Collapse : AdSlotFailure
 
     /** 잡아 둔 자리를 그대로 둔다. 하단 고정 배너처럼 레이아웃이 흔들리면 안 되는 곳에 알맞다. */
-    KeepSpace,
+    public data object KeepSpace : AdSlotFailure
 }
 
-/** 슬롯 하나의 불러오기 상태. 호출부가 실패 화면·로그를 정할 때 읽는다. */
-public sealed class AdSlotState {
+/** 슬롯 하나의 불러오기 상태. 호출부가 실패 화면·로그를 정할 때 읽는다. 닫힌 집합이다. */
+public sealed interface AdSlotState {
     /** 쓸 수 없는 상태(스위치 꺼짐·동의 전·설정 오류)라 요청하지 않았다. */
-    public data object Idle : AdSlotState()
+    public data object Idle : AdSlotState
 
     /** 불러오는 중. */
-    public data object Loading : AdSlotState()
+    public data object Loading : AdSlotState
 
     /** 광고가 있다. */
-    public data object Loaded : AdSlotState()
+    public data object Loaded : AdSlotState
 
     /** 실패했다. 재시도할지는 [AdsException.reason] 에 따라 라이브러리가 정한다. */
-    public data class Failed(val error: AdsException) : AdSlotState()
+    public class Failed(public val error: AdsException) : AdSlotState {
+        override fun equals(other: Any?): Boolean = other is Failed && error == other.error
+        override fun hashCode(): Int = error.hashCode()
+        override fun toString(): String = "Failed(error=${error.message})"
+    }
 }
 
 /** 슬롯이 그릴 것. */
@@ -37,9 +41,14 @@ internal enum class SlotDraw { Ad, Placeholder, Nothing }
 internal fun slotDraw(hasAd: Boolean, state: AdSlotState, failure: AdSlotFailure, hasPlaceholder: Boolean): SlotDraw = when {
     hasAd -> SlotDraw.Ad
     !hasPlaceholder -> SlotDraw.Nothing
-    state == AdSlotState.Loading -> SlotDraw.Placeholder
-    state is AdSlotState.Failed && failure == AdSlotFailure.KeepSpace -> SlotDraw.Placeholder
-    else -> SlotDraw.Nothing
+    else -> when (state) {
+        AdSlotState.Loading -> SlotDraw.Placeholder
+        is AdSlotState.Failed -> when (failure) {
+            AdSlotFailure.KeepSpace -> SlotDraw.Placeholder
+            AdSlotFailure.Collapse -> SlotDraw.Nothing
+        }
+        AdSlotState.Idle, AdSlotState.Loaded -> SlotDraw.Nothing
+    }
 }
 
 /**

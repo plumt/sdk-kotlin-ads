@@ -2,7 +2,7 @@ package net.plumt.ads
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.google.android.gms.ads.AdRequest
+import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,8 +49,8 @@ class OfflineAndNativeCompletionTest {
     @Test fun failureEndsRequestEvenWhileLoaderSaysLoading() {
         // 로더가 아직 불러오는 중이라고 답하는 시점의 실패 콜백 — 예전엔 여기서 끝나지 않았다
         val gate = NativeLoadGate<String>(count = 1)
-        val out = gate.onFailed(AdRequest.ERROR_CODE_NO_FILL, "no fill")
-        assertEquals(NativeLoadGate.Outcome.Failure(AdRequest.ERROR_CODE_NO_FILL, "no fill"), out)
+        val out = gate.onFailed(LoadAdError.ErrorCode.NO_FILL.value, "no fill")
+        assertEquals(NativeLoadGate.Outcome.Failure(LoadAdError.ErrorCode.NO_FILL.value, "no fill"), out)
         assertTrue(gate.pending.isEmpty())
     }
 
@@ -69,6 +69,21 @@ class OfflineAndNativeCompletionTest {
 
         val stopped = NativeLoadGate<String>(count = 5)
         assertEquals(NativeLoadGate.Outcome.Success(listOf("a")), stopped.onAd("a", stillLoading = false))
+    }
+
+    @Test fun loadingCompletedEndsWithWhatArrived() {
+        // Next-Gen 의 여러 장 요청은 onAdLoadingCompleted 로 끝을 알린다 — 요청보다 적게 와도 받은 만큼으로 끝낸다
+        val partial = NativeLoadGate<String>(count = 3)
+        assertSame(NativeLoadGate.Outcome.Pending, partial.onAd("a", stillLoading = true))
+        assertEquals(NativeLoadGate.Outcome.Success(listOf("a")), partial.onCompleted())
+        assertSame(NativeLoadGate.Outcome.Pending, partial.onCompleted()) // 두 번 끝내지 않는다
+
+        val empty = NativeLoadGate<String>(count = 2)
+        assertEquals(NativeLoadGate.Outcome.Failure(null, null), empty.onCompleted())
+
+        val failedFirst = NativeLoadGate<String>(count = 2)
+        failedFirst.onFailed(3, "no fill")
+        assertSame(NativeLoadGate.Outcome.Pending, failedFirst.onCompleted())
     }
 
     @Test fun callbacksAfterEndAreLateOrIgnored() {
@@ -107,33 +122,33 @@ class OfflineAndNativeCompletionTest {
     // ---- 오프라인 분류 ----
 
     @Test fun unknownHostMessageIsNetwork() {
-        assertEquals(AdErrorReason.Network, loadReason(AdRequest.ERROR_CODE_INTERNAL_ERROR, offlineMessage))
-        assertEquals(AdErrorReason.Network, loadException(AdRequest.ERROR_CODE_INTERNAL_ERROR, offlineMessage).reason)
+        assertEquals(AdErrorReason.Network, loadReason(LoadAdError.ErrorCode.INTERNAL_ERROR.value, offlineMessage))
+        assertEquals(AdErrorReason.Network, loadException(LoadAdError.ErrorCode.INTERNAL_ERROR.value, offlineMessage).reason)
         assertEquals(AdErrorReason.Network, loadReason(999, "java.net.UnknownHostException: x"))
-        assertEquals(AdErrorReason.Internal, loadReason(AdRequest.ERROR_CODE_INTERNAL_ERROR, "Internal error."))
+        assertEquals(AdErrorReason.Internal, loadReason(LoadAdError.ErrorCode.INTERNAL_ERROR.value, "Internal error."))
         // 분류가 분명한 코드는 메시지로 바꾸지 않는다
-        assertEquals(AdErrorReason.NoFill, loadReason(AdRequest.ERROR_CODE_NO_FILL, offlineMessage))
+        assertEquals(AdErrorReason.NoFill, loadReason(LoadAdError.ErrorCode.NO_FILL.value, offlineMessage))
         assertFalse(looksLikeNetworkFailure(null))
         assertFalse(looksLikeNetworkFailure(""))
     }
 
     @Test fun classifyOfflineOnlyTouchesAmbiguousLoadFailures() {
-        val internal = AdsException(AdsErrorKind.Load, 0, "m", reason = AdErrorReason.Internal)
+        val internal = AdsException(AdsErrorKind.Load, 0, "m", null, AdErrorReason.Internal)
         val re = internal.classifyOffline(online = false)
         assertEquals(AdErrorReason.Network, re.reason)
         assertEquals(0, re.code)
         assertEquals("[Load/Network/0] m", re.message)
         assertSame(internal, internal.classifyOffline(online = true))
-        val noFill = AdsException(AdsErrorKind.Load, 3, "m", reason = AdErrorReason.NoFill)
+        val noFill = AdsException(AdsErrorKind.Load, 3, "m", null, AdErrorReason.NoFill)
         assertSame(noFill, noFill.classifyOffline(online = false))
-        val show = AdsException(AdsErrorKind.Show, 0, "m", reason = AdErrorReason.Internal)
+        val show = AdsException(AdsErrorKind.Show, 0, "m", null, AdErrorReason.Internal)
         assertSame(show, show.classifyOffline(online = false))
         assertSame(internal, internal.withReason(AdErrorReason.Internal))
     }
 
     @Test fun awaitHoldsRetryWhileOffline() = runTest {
         online.value = false
-        val p = PreloadPolicy(retryBackoffMillis = 100)
+        val p = preload(retryBackoffMillis = 100)
         val after = async { p.awaitRetry(AdErrorReason.Internal, 0, online) }
         advanceTimeBy(10_000)
         assertFalse(after.isCompleted) // 대기가 끝나도 오프라인이면 다시 요청하지 않는다
@@ -147,7 +162,7 @@ class OfflineAndNativeCompletionTest {
         assertFalse(p.awaitRetry(AdErrorReason.InvalidRequest, 0, online))
         // 연결 대기를 끈 정책은 오프라인이어도 간격대로 다시 시도한다
         online.value = false
-        val optOut = async { p.copy(retryOnNetworkRestore = false).awaitRetry(AdErrorReason.Internal, 0, online) }
+        val optOut = async { p.toBuilder().retryOnNetworkRestore(false).build().awaitRetry(AdErrorReason.Internal, 0, online) }
         advanceTimeBy(101)
         runCurrent()
         assertTrue(optOut.await())
@@ -156,11 +171,11 @@ class OfflineAndNativeCompletionTest {
     @Test fun controllerTreatsOfflineInternalAsNetworkAndWaitsForConnection() = runTest {
         val provider = FakeProvider()
         online.value = false
-        repeat(2) { provider.enqueueError(AdsException(AdsErrorKind.Load, 0, "Internal error.", reason = AdErrorReason.Internal)) }
+        repeat(2) { provider.enqueueError(AdsException(AdsErrorKind.Load, 0, "Internal error.", null, AdErrorReason.Internal)) }
         val controller = FullScreenAdController(
             AdFormat.Interstitial, "p",
             listOf(AdUnit.interstitial("i", "") to "missing", AdUnit.interstitial("j", "") to "backup"),
-            context, provider, AdFrequencyPolicy.Unlimited, PreloadPolicy(retryBackoffMillis = 5_000),
+            context, provider, AdFrequencyPolicy.Unlimited, preload(retryBackoffMillis = 5_000),
             MutableStateFlow(true), events, clock, CoroutineScope(UnconfinedTestDispatcher(testScheduler) + job),
             FullScreenCoordinator(clock, 0), AdConnectivity { online },
         )

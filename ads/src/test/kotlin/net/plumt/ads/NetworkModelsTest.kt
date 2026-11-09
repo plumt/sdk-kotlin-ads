@@ -26,7 +26,7 @@ class NetworkModelsTest {
     }
 
     @Test fun nativeViewsDefaultToNull() {
-        val v = NativeAdViews()
+        val v = views()
         listOf(v.headline, v.body, v.callToAction, v.advertiser, v.price, v.store, v.starRating, v.icon, v.media).forEach { assertNull(it) }
     }
 
@@ -42,6 +42,6 @@ class NetworkModelsTest {
     @Test fun nativeViewsHoldGivenViews() {
         val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
         val view = View(ctx)
-        assertEquals(view, NativeAdViews(headline = view).headline)
+        assertEquals(view, views(headline = view).headline)
     }
 }

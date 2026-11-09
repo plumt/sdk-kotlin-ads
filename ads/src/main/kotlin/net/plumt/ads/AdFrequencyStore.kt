@@ -24,13 +24,16 @@ public interface AdFrequencyStore {
         /** 프로세스 안에서만 사는 저장소. 프로세스가 끝나면 기록이 사라진다(테스트·영속이 필요 없는 정책용). */
         public fun inMemory(): AdFrequencyStore = InMemoryFrequencyStore()
 
+        /** [DEFAULT_FILE_NAME] 파일에 기록한다. [AdsConfig.frequencyStore] 를 정하지 않았을 때의 기본값이다. */
+        public fun sharedPreferences(context: Context): AdFrequencyStore = sharedPreferences(context, DEFAULT_FILE_NAME)
+
         /**
-         * 앱 전용 SharedPreferences 파일에 기록한다. 프로세스 재시작·기기 재부팅을 넘어 유지된다. [AdsClient.create] 의 기본값이다.
+         * 앱 전용 SharedPreferences 파일에 기록한다. 프로세스 재시작·기기 재부팅을 넘어 유지된다.
          * 파일은 처음 읽거나 쓸 때 연다.
          *
          * @throws IllegalArgumentException [fileName] 이 비었을 때
          */
-        public fun sharedPreferences(context: Context, fileName: String = DEFAULT_FILE_NAME): AdFrequencyStore {
+        public fun sharedPreferences(context: Context, fileName: String): AdFrequencyStore {
             require(fileName.isNotBlank()) { "fileName 이 비었습니다" }
             return SharedPreferencesFrequencyStore(context.applicationContext, fileName)
         }

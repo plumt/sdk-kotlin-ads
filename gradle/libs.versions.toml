@@ -3,10 +3,11 @@ agp = "9.0.1"
 kotlin = "2.2.10"
 maven-publish = "0.36.0"
 compose-bom = "2025.02.00"
-play-services-ads = "23.6.0"
+ads-mobile-sdk = "1.6.0"
 user-messaging-platform = "4.0.0"
 coroutines = "1.10.2"
 lifecycle = "2.9.4"
+activity = "1.11.0"
 junit = "4.13.2"
 robolectric = "4.14.1"
 kover = "0.9.1"
@@ -14,7 +15,7 @@ binary-compatibility-validator = "0.18.1"
 androidx-test-core = "1.6.1"
 
 [libraries]
-play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "play-services-ads" }
+ads-mobile-sdk = { module = "com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk", version.ref = "ads-mobile-sdk" }
 user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "user-messaging-platform" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
@@ -23,6 +24,7 @@ androidx-compose-foundation = { module = "androidx.compose.foundation:foundation
 androidx-compose-runtime = { module = "androidx.compose.runtime:runtime" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 junit = { module = "junit:junit", version.ref = "junit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }

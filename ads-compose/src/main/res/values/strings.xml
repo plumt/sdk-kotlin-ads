@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 기성 네이티브 카드의 "광고" 배지. 광고 표시 정책상 숨기지 않는다 -->
-    <string name="net_plumt_ads_native_badge">Ad</string>
-    <string name="net_plumt_ads_exit_title">Exit app</string>
-    <string name="net_plumt_ads_exit_message">Do you want to exit the app?</string>
-    <string name="net_plumt_ads_exit_cancel">Cancel</string>
-    <string name="net_plumt_ads_exit_confirm">Exit</string>
+    <string name="ads_native_badge">Ad</string>
+    <string name="ads_exit_title">Exit app</string>
+    <string name="ads_exit_message">Do you want to exit the app?</string>
+    <string name="ads_exit_cancel">Cancel</string>
+    <string name="ads_exit_confirm">Exit</string>
     <!-- 미리보기 자리표시 문구 -->
-    <string name="net_plumt_ads_preview_headline">Ad headline</string>
-    <string name="net_plumt_ads_preview_body">Sample ad body. A real ad shows its description here.</string>
-    <string name="net_plumt_ads_preview_cta">Learn more</string>
-    <string name="net_plumt_ads_preview_banner">Banner ad</string>
-    <string name="net_plumt_ads_preview_row_headline">Ad headline</string>
-    <string name="net_plumt_ads_preview_row_body">Sample ad body</string>
-    <string name="net_plumt_ads_preview_row_cta">Install</string>
+    <string name="ads_preview_headline">Ad headline</string>
+    <string name="ads_preview_body">Sample ad body. A real ad shows its description here.</string>
+    <string name="ads_preview_cta">Learn more</string>
+    <string name="ads_preview_banner">Banner ad</string>
+    <string name="ads_preview_row_headline">Ad headline</string>
+    <string name="ads_preview_row_body">Sample ad body</string>
+    <string name="ads_preview_row_cta">Install</string>
 </resources>

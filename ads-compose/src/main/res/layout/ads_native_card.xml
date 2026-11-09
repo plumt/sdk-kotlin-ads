@@ -5,13 +5,13 @@
   색은 NativeAdColors 로 코드에서 덮어쓴다.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/net_plumt_ads_card_content"
+    android:id="@+id/ads_card_content"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
     <FrameLayout
-        android:id="@+id/net_plumt_ads_card_media"
+        android:id="@+id/ads_card_media"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
@@ -24,7 +24,7 @@
         android:orientation="horizontal">
 
         <ImageView
-            android:id="@+id/net_plumt_ads_card_icon"
+            android:id="@+id/ads_card_icon"
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:layout_marginEnd="10dp"
@@ -39,7 +39,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/net_plumt_ads_card_headline"
+                android:id="@+id/ads_card_headline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
@@ -49,7 +49,7 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/net_plumt_ads_card_body"
+                android:id="@+id/ads_card_body"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
@@ -61,7 +61,7 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/net_plumt_ads_card_cta"
+        android:id="@+id/ads_card_cta"
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:layout_marginTop="12dp"

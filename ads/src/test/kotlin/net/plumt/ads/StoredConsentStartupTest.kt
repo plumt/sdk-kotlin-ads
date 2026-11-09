@@ -61,7 +61,7 @@ class StoredConsentStartupTest {
     private val job = Job()
 
     private fun TestScope.client(gateway: ConsentGateway) = DefaultAdsClient(
-        context, AdsConfig(), AdsEnabledSource.Always, RecordingEvents(), network, gateway, FakeClock(0),
+        context, config(), AdsEnabledSource.Always, RecordingEvents(), network, gateway, FakeClock(0),
         CoroutineScope(UnconfinedTestDispatcher(testScheduler) + job), AdFrequencyStore.inMemory(), FakeClock(0),
     )
 

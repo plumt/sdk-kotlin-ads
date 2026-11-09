@@ -53,7 +53,10 @@ public interface AdsEnabledSource {
 }
 
 /** 값을 코드로 바꾸는 기본 스위치. 구매 결과를 받는 쪽이 [set] 을 부른다. */
-public class MutableAdsEnabledSource(initial: Boolean = true) : AdsEnabledSource {
+public class MutableAdsEnabledSource(initial: Boolean) : AdsEnabledSource {
+    /** 켜짐으로 시작한다. */
+    public constructor() : this(true)
+
     private val state = MutableStateFlow(initial)
 
     override val enabled: StateFlow<Boolean> = state.asStateFlow()

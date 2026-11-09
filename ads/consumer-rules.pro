@@ -1,7 +1,8 @@
 # 이 라이브러리 자체는 리플렉션·직렬화를 쓰지 않는다. 아래 규칙은 광고 SDK 가 끌어오는 의존을 위한 것이다.
 # 앱의 진짜 누락 경고를 가리지 않도록 -dontwarn 은 두지 않는다.
 
-# 광고 SDK(play-services-ads) → work-runtime 2.7.x → room-runtime 2.2.x.
+# 광고 SDK(GMA Next-Gen ads-mobile-sdk 1.6.0) → work-runtime 2.7.x → room-runtime 2.2.x.
+# Next-Gen SDK 자체의 규칙(Gson·난독화된 내부 클래스)은 그 aar 의 proguard.txt 가 싣는다 — 여기서 더하지 않는다.
 # Room 은 생성된 *_Impl 을 이름으로 찾아 기본 생성자로 만든다(Room.getGeneratedImplementation).
 # room-runtime 2.2.x 의 규칙 "-keep class * extends androidx.room.RoomDatabase" 는 멤버를 적지 않아
 # R8 전체 모드(AGP 8 이상 기본)에서 기본 생성자를 지키지 않는다 → WorkDatabase_Impl 생성자가 지워져

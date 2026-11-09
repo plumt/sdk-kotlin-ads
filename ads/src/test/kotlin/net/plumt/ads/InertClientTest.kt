@@ -41,7 +41,7 @@ class InertClientTest {
 
     @Test fun inertNetworkFailsLoudlyIfCalled() = runBlocking {
         val net = InertNetwork
-        net.initialize(context, AdsConfig())
+        net.initialize(context, config())
         val load = assertThrows(AdsException::class.java) { runBlocking { net.interstitial.load(context, "x") } }
         assertEquals(AdsErrorKind.Load, load.kind)
         assertThrows(AdsException::class.java) { runBlocking { net.rewarded.load(context, "x") } }

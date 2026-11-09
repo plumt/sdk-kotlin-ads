@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -41,8 +42,10 @@ class StyleValuesTest {
         assertEquals(PaddingValues(12.dp), s.contentPadding)
         assertEquals(s, style())
         assertNotEquals(s, style(border = Color.Red))
-        assertEquals(Color.Red, s.copy(borderColor = Color.Red).borderColor)
+        assertEquals(Color.Red, style(border = Color.Red).borderColor)
         assertEquals(s.hashCode(), style().hashCode())
+        assertNotEquals(s, "x")
+        assertTrue(s.toString().startsWith("NativeAdRowStyle(minHeight="))
     }
 
     @Test fun colorsKeepValues() {

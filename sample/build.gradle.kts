@@ -5,22 +5,24 @@ import java.util.zip.ZipFile
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
 }
 
 // 발행하지 않는 확인용 앱. 소비 앱과 같은 조건(R8 전체 모드 + 리소스 축소, 앱 규칙은 기본 파일뿐)으로 release 를 만들어
-// ads 의 consumer-rules.pro 만으로 광고 SDK 가 끌어오는 라이브러리의 리플렉션 대상이 살아남는지 본다. 기기 없이 dex 만 읽는다
+// ads 의 consumer-rules.pro 만으로 광고 SDK 가 끌어오는 라이브러리의 리플렉션 대상이 살아남는지 본다(기기 없이 dex 만 읽는다).
+// 실기기에서는 형식마다 버튼으로 공개 메서드를 불러 본다 — 늘 개발 모드라 Google 시험 광고만 요청한다
 android {
     namespace = "net.plumt.ads.sample"
     compileSdk = 36
 
     defaultConfig {
         applicationId = "net.plumt.ads.sample"
-        // 광고 SDK 24 이상은 minSdk 24 를 요구한다 — 최신 버전 강제 해석(-PgmaCompatVersion)일 때만 올린다
-        minSdk = if (providers.gradleProperty("gmaCompatVersion").isPresent) 24 else 23
+        // GMA Next-Gen SDK 가 요구하는 최소값
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1"
-        // Google 이 공개한 시험 앱 ID. 확인용 앱은 실행하지 않지만 광고 SDK 가 요구하는 meta-data 를 소비 앱처럼 채운다
+        // Google 이 공개한 시험 앱 ID. 라이브러리가 이 meta-data 를 읽어 초기화 설정으로 넘기고, UMP 도 같은 값을 읽는다
         manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
     }
 
@@ -38,6 +40,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    buildFeatures {
+        compose = true
+    }
 }
 
 kotlin {
@@ -48,12 +54,16 @@ kotlin {
 
 dependencies {
     implementation(project(":ads"))
+    implementation(project(":ads-compose"))
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.activity.compose)
 }
 
 // ads 모듈과 같은 강제 해석 — CI 가 최신 광고 SDK 로도 release dex 를 확인한다
 providers.gradleProperty("gmaCompatVersion").orNull?.let { version ->
     configurations.configureEach {
-        resolutionStrategy.force("com.google.android.gms:play-services-ads:$version")
+        resolutionStrategy.force("com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk:$version")
     }
 }
 

@@ -4,14 +4,14 @@
   크기·색·여백은 NativeAdRowStyle 로 코드가 채운다. 등록 자산은 아이콘·제목·본문·CTA 뿐이라 배지·배경은 클릭 영역이 아니다.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/net_plumt_ads_row_content"
+    android:id="@+id/ads_row_content"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:orientation="horizontal">
 
     <ImageView
-        android:id="@+id/net_plumt_ads_row_icon"
+        android:id="@+id/ads_row_icon"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:importantForAccessibility="no"
@@ -30,7 +30,7 @@
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/net_plumt_ads_row_badge"
+                android:id="@+id/ads_row_badge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:includeFontPadding="false"
@@ -38,7 +38,7 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/net_plumt_ads_row_headline"
+                android:id="@+id/ads_row_headline"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -49,7 +49,7 @@
         </LinearLayout>
 
         <TextView
-            android:id="@+id/net_plumt_ads_row_body"
+            android:id="@+id/ads_row_body"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="end"
@@ -58,7 +58,7 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/net_plumt_ads_row_cta"
+        android:id="@+id/ads_row_cta"
         android:layout_width="wrap_content"
         android:layout_height="32dp"
         android:gravity="center"

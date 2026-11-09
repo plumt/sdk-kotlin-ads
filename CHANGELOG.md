@@ -1,8 +1,69 @@
 # Changelog
 
 모듈별로 적는다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/), 버전은 [SemVer](https://semver.org/lang/ko/) 이다.
+0.0.x 는 Maven Central 에 게시되지 않았다. 그래서 0.1.0 은 하위 호환 절차(지원 중단 경고) 없이 공개 API 를 한 번에 바꿨다.
 
 ## ads
+
+### [0.1.0] - 2026-11-08
+
+#### 깨짐
+- 기반 광고 SDK 를 레거시 `com.google.android.gms:play-services-ads`(23.6.0)에서 GMA Next-Gen SDK `com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk`(1.6.0)로 바꿨다. 공개 API(`.api`)는 그대로다
+  - minSdk 를 23 에서 24 로 올렸다(Next-Gen 요구). API 23 기기는 지원하지 않는다
+  - 레거시 `play-services-ads` 를 더는 끌어오지 않는다. 앱이나 다른 라이브러리(중개 어댑터 등)가 레거시 SDK 를 끌어오면 클래스가 겹치므로 앱에서 전역으로 뺀다(README "최소 요구사항")
+  - 기본 구현 `AdsException.code` 의 값이 Next-Gen 오류 코드 열거값의 정수다. 불러오기 9(중개 채움 없음)·표시 2(준비 안 됨)가 없어지고 불러오기 4(시간 초과 → `Timeout`)·7(찾을 수 없음 → `InvalidRequest`)·11(잘못된 광고 응답 → `Internal`)·표시 5(→ `Expired`)가 생겼다. 분류(`reason`)로 분기하던 코드는 영향이 없다
+  - 기본 구현의 `NativeAdViews.media` 는 Next-Gen `MediaView`(`com.google.android.libraries.ads.mobile.sdk.nativead.MediaView`)여야 한다. 레거시 `com.google.android.gms.ads.nativead.MediaView` 를 넘기면 `bind` 가 `IllegalArgumentException` 을 던진다. `NativeAdProvider.createMediaView(context)` 로 만들면 된다
+  - 기본 구현의 배너 `BannerHandle.pause`·`resume` 은 아무것도 하지 않는다(Next-Gen 배너에 해당 API 가 없다. 자동 갱신은 배너가 보이는 동안에만 돈다)
+- 공개 `enum` 을 없앴다. 상수 이름은 그대로라 `AdFormat.Banner` 같은 참조는 그대로 컴파일되지만 `values()`·`entries`·`ordinal`·`valueOf`·`compareTo` 가 없어졌다
+  - 닫힌 집합 → `sealed interface`(하위는 `data object`): `AdFlag`·`AdContentRating`·`AdTarget`·`AdsMode`·`FrequencyScope`·`FullScreenAdState`·`ConsentGatherResult`·`consent.ConsentStatus`. `when` 에 `else` 가 필요 없다
+  - 늘 수 있는 값 → 상수를 가진 클래스(생성자 비공개, `name` 속성, 동반 객체의 `values`): `AdFormat`·`AdErrorReason`(`retryable` 유지)·`AdsErrorKind`·`AdsWarning`·`SuppressReason`·`ConsentDebugGeography`. `when` 에는 `else` 를 둔다
+- 공개 `data class` 를 일반 클래스(+`equals`/`hashCode`/`toString`)로 바꿨다 — `copy`·`componentN` 이 없어졌다: `AdAudience`·`AdUnit`·`AdsConfig`·`PreloadPolicy`·`consent.ConsentSnapshot`·`AdEvent` 의 하위 11개·`RetryStep.After`·`ShowResult.Suppressed`·`ShowResult.Failed`.
+  `AdAudience.copy(maxContentRating = …)` 는 `withMaxContentRating(…)`(그리고 `withChildDirected`·`withUnderAgeOfConsent`)로 바꾼다
+- 결과·상태의 `sealed class` 를 `sealed interface` 로 바꿨다: `AdEvent`·`ShowResult`·`RetryStep`
+- 기본값 인자를 없앴다(인자를 더하면 바이너리가 깨진다). 오버로드·불변 설정·빌더로 바꿨다
+  - `AdsConfig(...)` → `AdsConfig.builder()…build()`·`adsConfig { }`·`toBuilder()`. 인자 없는 `AdsConfig()` 는 남았다
+  - `AdsClient.create(context, config, enabledSource, events, network, frequencyStore, units, connectivity)` → `create(context)`·`create(context, config)`.
+    스위치·분석 훅·네트워크·빈도 저장소·단위 등록부·연결 상태는 `AdsConfig` 의 `enabledSource`·`events`·`network`·`frequencyStore`·`units`·`connectivity` 로 옮겼다
+  - `fullScreenController(unit, placement, policy, preload, fallbacks, frequencyScope)` → `fullScreenController(unit)`·`fullScreenController(unit, FullScreenAdOptions)`
+  - `PreloadPolicy(...)` → `PreloadPolicy.Default`·`PreloadPolicy.builder()…build()`·`toBuilder()`
+  - `IntervalFrequencyPolicy(...)` → `IntervalFrequencyPolicy()`(모두 기본)·`IntervalFrequencyPolicy.builder()…build()`
+  - `NativeAdViews(...)` → `NativeAdViews.builder()…build()`
+  - `adUnitId`·`gatherConsent`·`gatherConsentOnFirstResume`·`prefetchedNativeAd`·`FullScreenAdController.show`·`AdUnit.banner` 등 5개 팩토리·`AdUnit` 생성자·`AdsException` 생성자·
+    `AdEvent.LoadFailed`/`ShowFailed`(`reason` 필수)·`LaunchCountFrequencyPolicy`·`MutableAdsEnabledSource`·`NativeAdAssets`·`AdFrequencyStore.sharedPreferences`·`AdsClient.inert` 는 같은 이름의 오버로드로 남았다.
+    이름 붙은 인자로 중간 인자를 건너뛰던 호출(`AdsException(…, reason = X)`·`prefetchedNativeAd(unit, ttlMillis = …)`)은 앞 인자를 함께 적는다
+- 예상되는 실패를 던지지 않고 값으로 돌려준다
+  - `AdsClient.gatherConsent` 가 동의 실패를 `AdsException` 으로 던지던 것을 `ConsentGatherResult.Failed(error)` 로 돌려준다
+  - `ConsentManager.gather`·`showPrivacyOptions` 가 `Unit` 대신 `ConsentFormResult`(`Completed`·`AlreadyInProgress`·`Failed`)를 돌려주고 던지지 않는다
+  - `gatherConsentOnFirstResume` 의 콜백이 `Result<ConsentGatherResult>` 대신 `ConsentGatherResult` 를 받고, 취소 핸들 `AdsCallHandle` 을 돌려준다
+- 공개 인터페이스의 기본 구현을 Java 기본 메서드로만 낸다(`-jvm-default=no-compatibility`) — `BannerListener`·`FullScreenAdCallbacks`·`NativeAdProvider`·`AdsClient` 의 `$DefaultImpls` 가 없어졌다(Java 에서 부르던 경우만 해당)
+
+#### 추가
+- 테스트용 `FakeAdsClient` — 광고 SDK·UMP·기기 없이 컨트롤러·미리 받기·빈도 정책·단위 검사를 기본 구현과 같은 내부 로직으로 돌린다. 스위치·동의·연결·초기화 실패·불러오기/표시 실패를 정하고, 닫기·보상·클릭을 흉내 내고, 사건을 기록한다
+- 테스트용 `consent.FakeConsentManager` — 동의 상태와 폼 결과를 정해 둔다(`Allowed`·`Denied`)
+- 콜백 형태(메인 스레드로 한 번, 취소 핸들 `AdsCallHandle`): `AdsClient.gatherConsent(activity, onResult)`·`gatherConsent(activity, switchTimeoutMillis, onResult)`,
+  `ConsentManager.gather(activity, onResult)`·`showPrivacyOptions(activity, onResult)`. `AdsClient.close()` 는 진행 중인 콜백 호출도 멈춘다
+- `FullScreenAdOptions`(배치·정책·미리 불러오기·대체 단위·빈도 범위), `AdsConfig.Builder`·`adsConfig { }`, `PreloadPolicy.Builder`, `IntervalFrequencyPolicy.Builder`, `NativeAdViews.Builder`
+- 상수 클래스의 `values`(정의 순서의 전체 목록)
+- 확인용 앱 `sample` 을 실기기 확인 화면으로 넓혔다(발행 안 함) — 동의·개인정보 옵션·광고 스위치·전면·보상형·앱 오프닝·네이티브 행/목록/작은 카드·종료 팝업·배너를 버튼으로 부른다. 늘 개발 모드라 시험 광고만 요청한다
+- 일치 테스트 — `ERRORS.md` 가 모든 `AdErrorReason`·`AdsErrorKind`·`SuppressReason`·`ConsentGatherResult` 를, README 가 설치 줄의 버전과 API 레벨 표를 적었는지 확인한다
+
+#### 바뀜
+- 앱 ID 는 계속 매니페스트 `com.google.android.gms.ads.APPLICATION_ID` meta-data 에 적는다. 기본 구현이 이 값을 읽어 Next-Gen 초기화 설정(`InitializationConfig`)으로 넘긴다(UMP 도 같은 meta-data 를 읽는다).
+  meta-data 가 없으면 예전처럼 광고 SDK 가 프로세스 시작 때 앱을 멈추지 않고, 라이브러리가 초기화하지 않은 채 `Configuration`(`CODE_APP_ID_MISSING`)으로 알린다
+- 요청 설정(아동·동의 연령·등급 상한·시험 기기)을 `MobileAds.setRequestConfiguration` 대신 초기화 설정에 담아 넘긴다(Next-Gen 은 초기화 전 `MobileAds` 호출을 막는다). 광고는 초기화가 끝난 뒤에만 불러온다
+- Next-Gen SDK 가 백그라운드 스레드에서 부르는 불러오기·사건 콜백을 메인 스레드로 옮겨 `FullScreenAdCallbacks`·`BannerListener` 계약(메인 스레드)을 지킨다
+- 네이티브 여러 장 요청의 끝을 Next-Gen 의 완료 콜백으로 판단한다. 전면형 광고는 다 쓰면 SDK 의 `destroy()` 까지 부른다
+- `AdContentRating` 을 SDK 상수(`RequestConfiguration.MaxAdContentRating`)로 명시적으로 옮긴다(이름 문자열에 기대지 않는다. 동작 변화 없음)
+- 리소스 접두어 `ads_` 를 건다(`resourcePrefix`). 이 모듈에는 리소스가 없다
+- README 에 호출 형태·테스트·API 레벨 표·알려진 한계를 더했다
+
+#### 고침
+- `gatherConsentOnFirstResume` 을 건 뒤 거둘 방법이 없던 문제. 화면이 한 번도 오르지 않으면(백그라운드 전용 프로세스 등) 수명주기 콜백이 프로세스 끝까지 남았다.
+  이제 돌려받은 `AdsCallHandle.cancel()` 로 떼고, `AdsClient.close()` 도 진행 중인 수집을 멈춘다
+- `FakeAdsClient`·`FakeConsentManager` 가 없어 앱 단위 테스트가 광고 흐름을 시험하려면 내부 클래스를 흉내 내야 했다(위 추가)
+- 기본 구현(`MobileAdsNetwork`)에서 매니페스트 앱 ID 검사를 동의(UMP) 수집보다 먼저 한다. 전에는 새 설치(저장된 동의 없음)에서 앱 ID 가 없거나 비면
+  UMP 가 먼저 실패해 초기화까지 가지 않아 `configurationErrors` 가 비어 있었다. 이제 `AdsClient` 를 만들 때 `CODE_APP_ID_MISSING`
+  (운영 모드의 시험 앱 ID 면 `CODE_TEST_APP_ID_IN_PRODUCTION`)이 한 번 잡히고 `initializationError` 에도 온다. 광고는 전처럼 나가지 않는다
 
 ### [0.0.2] - 2026-11-07
 
@@ -97,6 +158,30 @@
 - 네이티브 별점 값을 넣지 않던 문제, 다시 묶을 때 이전 `NativeAdView` 를 destroy 하지 않던 문제
 
 ## ads-compose
+
+### [Unreleased]
+
+### [0.1.0] - 2026-11-08
+
+#### 깨짐
+- `AdSlotFailure` 를 `enum` 에서 `sealed interface`(`Collapse`·`KeepSpace` 는 `data object`)로, `AdSlotState` 를 `sealed class` 에서 `sealed interface` 로 바꿨다. `AdSlotState.Failed` 는 일반 클래스다(`copy`·`component1` 없음)
+- `NativeAdRowStyle` 을 `data class` 에서 일반 클래스로 바꾸고 생성자를 내부로 돌렸다. `NativeAdRowDefaults.style(…)` 로 만든다(바꿀 값만 넘긴다). `copy` 대신 `style(…)` 을 다시 부른다
+- `NativeAdViewIds(...)` → `NativeAdViewIds.builder()…build()`
+- `AdInterleave` 의 기본값 인자를 오버로드 생성자(`(interval)`·`(interval, firstAdAfter)`·`(interval, firstAdAfter, maxAds)`)로 바꿨다
+- `itemsWithAds` 의 `contentType` 기본값을 없애고 `contentType` 없는 오버로드를 더했다
+- 리소스 이름 접두어를 `net_plumt_ads_` 에서 `ads_` 로 바꾸고 `resourcePrefix = "ads_"` 로 강제한다(레이아웃 `ads_native_card`·`ads_native_row`, 문자열 `ads_*`, id `ads_*`). 앱이 라이브러리 리소스를 이름으로 덮어쓰던 경우만 해당한다
+- 공개 인터페이스 기본 구현을 Java 기본 메서드로만 낸다(`-jvm-default=no-compatibility`)
+
+#### 바뀜
+- minSdk 를 23 에서 24 로 올렸다(`ads` 의 GMA Next-Gen SDK 전환). 공개 API 는 그대로다
+- `rememberFullScreenAdController` 는 인자를 그대로 받고 안에서 `FullScreenAdOptions` 를 만든다. `retry`·`preload` 기본값은 `PreloadPolicy.Default` 다
+- `ads` 0.1.0 을 따른다
+
+#### 추가
+- `NativeAdViewIds.Builder`, `itemsWithAds` 의 `contentType` 없는 오버로드
+
+#### 고침
+- 배너 리스너가 상위 인터페이스와 다른 매개변수 이름(`raw`)을 써 이름 붙은 인자 호출에서 어긋날 수 있던 것을 맞췄다(동작 변화 없음)
 
 ### [0.0.2] - 2026-11-07
 

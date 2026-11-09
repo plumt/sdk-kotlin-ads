@@ -79,7 +79,7 @@ public fun rememberNativeAdPool(
     placement: String = unit.name,
     refreshAfterMillis: Long = DEFAULT_NATIVE_REFRESH_MILLIS,
     fallbacks: List<AdUnit> = emptyList(),
-    retry: PreloadPolicy = PreloadPolicy(),
+    retry: PreloadPolicy = PreloadPolicy.Default,
     onLoadFailed: (AdsException) -> Unit = {},
 ): NativeAdPool {
     unit.requireFormat(AdFormat.Native)
@@ -123,20 +123,87 @@ public fun rememberNativeAd(
 ): NativeAdHandle? = rememberNativeAdPool(unit, 1, placement, fallbacks = fallbacks, onLoadFailed = onLoadFailed)[0]
 
 /**
- * 앱 레이아웃 안의 뷰 id. 레이아웃에 없는 자산은 [View.NO_ID] 로 둔다.
- * [media] 는 기본 구현에서 `MediaView` 여야 한다.
+ * 앱 레이아웃 안의 뷰 id. 레이아웃에 없는 자산은 [View.NO_ID] 로 둔다. [builder] 로 만든다.
+ * [media] 는 기본 구현에서 GMA Next-Gen SDK 의 `MediaView`(`com.google.android.libraries.ads.mobile.sdk.nativead.MediaView`)여야 한다.
  */
-public class NativeAdViewIds(
-    @param:IdRes public val headline: Int = View.NO_ID,
-    @param:IdRes public val body: Int = View.NO_ID,
-    @param:IdRes public val callToAction: Int = View.NO_ID,
-    @param:IdRes public val advertiser: Int = View.NO_ID,
-    @param:IdRes public val price: Int = View.NO_ID,
-    @param:IdRes public val store: Int = View.NO_ID,
-    @param:IdRes public val starRating: Int = View.NO_ID,
-    @param:IdRes public val icon: Int = View.NO_ID,
-    @param:IdRes public val media: Int = View.NO_ID,
-)
+public class NativeAdViewIds private constructor(builder: Builder) {
+    @IdRes public val headline: Int = builder.headline
+
+    @IdRes public val body: Int = builder.body
+
+    @IdRes public val callToAction: Int = builder.callToAction
+
+    @IdRes public val advertiser: Int = builder.advertiser
+
+    @IdRes public val price: Int = builder.price
+
+    @IdRes public val store: Int = builder.store
+
+    @IdRes public val starRating: Int = builder.starRating
+
+    @IdRes public val icon: Int = builder.icon
+
+    @IdRes public val media: Int = builder.media
+
+    private fun parts() = listOf(headline, body, callToAction, advertiser, price, store, starRating, icon, media)
+
+    override fun equals(other: Any?): Boolean = other is NativeAdViewIds && parts() == other.parts()
+
+    override fun hashCode(): Int = parts().hashCode()
+
+    override fun toString(): String =
+        "NativeAdViewIds(headline=$headline, body=$body, callToAction=$callToAction, advertiser=$advertiser, price=$price, " +
+            "store=$store, starRating=$starRating, icon=$icon, media=$media)"
+
+    /** [NativeAdViewIds] 를 만든다. 정하지 않은 id 는 [View.NO_ID]. */
+    public class Builder internal constructor() {
+        internal var headline = View.NO_ID
+        internal var body = View.NO_ID
+        internal var callToAction = View.NO_ID
+        internal var advertiser = View.NO_ID
+        internal var price = View.NO_ID
+        internal var store = View.NO_ID
+        internal var starRating = View.NO_ID
+        internal var icon = View.NO_ID
+        internal var media = View.NO_ID
+
+        /** 제목. */
+        public fun headline(@IdRes id: Int): Builder = apply { headline = id }
+
+        /** 본문. */
+        public fun body(@IdRes id: Int): Builder = apply { body = id }
+
+        /** 행동 유도 버튼. */
+        public fun callToAction(@IdRes id: Int): Builder = apply { callToAction = id }
+
+        /** 광고주. */
+        public fun advertiser(@IdRes id: Int): Builder = apply { advertiser = id }
+
+        /** 가격. */
+        public fun price(@IdRes id: Int): Builder = apply { price = id }
+
+        /** 스토어. */
+        public fun store(@IdRes id: Int): Builder = apply { store = id }
+
+        /** 별점. */
+        public fun starRating(@IdRes id: Int): Builder = apply { starRating = id }
+
+        /** 아이콘. */
+        public fun icon(@IdRes id: Int): Builder = apply { icon = id }
+
+        /** 미디어 뷰(Next-Gen `MediaView`). */
+        public fun media(@IdRes id: Int): Builder = apply { media = id }
+
+        /** 만든다. */
+        public fun build(): NativeAdViewIds = NativeAdViewIds(this)
+    }
+
+    public companion object {
+        /** 빌더. */
+        @JvmStatic
+        public fun builder(): Builder = Builder()
+    }
+}
 
 /**
  * 앱 레이아웃으로 그리는 네이티브 광고 슬롯. 레이아웃 없이 쓰려면 기성 카드([NativeAdRow]·[NativeAdListItem])를 쓴다.
@@ -191,18 +258,18 @@ public fun NativeAdSlot(
 
 private fun View.findViews(ids: NativeAdViewIds): NativeAdViews {
     fun find(id: Int): View? = if (id == View.NO_ID) null else findViewById(id)
-    return NativeAdViews(
-        headline = find(ids.headline),
-        body = find(ids.body),
-        callToAction = find(ids.callToAction),
-        advertiser = find(ids.advertiser),
-        price = find(ids.price),
-        store = find(ids.store),
-        starRating = find(ids.starRating),
-        icon = find(ids.icon),
-        media = find(ids.media),
-    )
+    return NativeAdViews.builder()
+        .headline(find(ids.headline))
+        .body(find(ids.body))
+        .callToAction(find(ids.callToAction))
+        .advertiser(find(ids.advertiser))
+        .price(find(ids.price))
+        .store(find(ids.store))
+        .starRating(find(ids.starRating))
+        .icon(find(ids.icon))
+        .media(find(ids.media))
+        .build()
 }
 
 // 뷰 태그 키는 리소스 id 여야 한다. 라이브러리 ids.xml 에 선언해 앱 id 와 겹치지 않게 한다
-internal val TAG_BOUND = R.id.net_plumt_ads_native_bound
+internal val TAG_BOUND = R.id.ads_native_bound

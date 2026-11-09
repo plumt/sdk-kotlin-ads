@@ -22,7 +22,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [23, 30, 35])
+@Config(sdk = [24, 30, 35])
 class ModeAndUnitTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
 
@@ -53,7 +53,7 @@ class ModeAndUnitTest {
     }
 
     @Test fun productionStripsDevOnlySettingsWithWarnings() {
-        val cfg = AdsConfig(testDeviceIds = listOf("dev-1"), consentDebugGeography = ConsentDebugGeography.Eea)
+        val cfg = config(testDeviceIds = listOf("dev-1"), consentDebugGeography = ConsentDebugGeography.Eea)
         val (prod, warnings) = cfg.effectiveFor(AdsMode.Production)
         assertEquals(AdsMode.Production, prod.mode)
         assertTrue(prod.testDeviceIds.isEmpty())
@@ -61,11 +61,11 @@ class ModeAndUnitTest {
         assertEquals(setOf(AdsWarning.TestDeviceIdsIgnored, AdsWarning.ConsentDebugGeographyIgnored), warnings)
 
         val (dev, devWarnings) = cfg.effectiveFor(AdsMode.Development)
-        assertEquals(cfg.copy(mode = AdsMode.Development), dev)
+        assertEquals(cfg.toBuilder().mode(AdsMode.Development).build(), dev)
         assertTrue(devWarnings.isEmpty())
 
-        assertEquals(setOf(AdsWarning.TestDeviceIdsIgnored), AdsConfig(testDeviceIds = listOf("a")).effectiveFor(AdsMode.Production).second)
-        assertTrue(AdsConfig().effectiveFor(AdsMode.Production).second.isEmpty())
+        assertEquals(setOf(AdsWarning.TestDeviceIdsIgnored), config(testDeviceIds = listOf("a")).effectiveFor(AdsMode.Production).second)
+        assertTrue(config().effectiveFor(AdsMode.Production).second.isEmpty())
         assertThrows(IllegalArgumentException::class.java) { cfg.effectiveFor(AdsMode.Auto) }
     }
 

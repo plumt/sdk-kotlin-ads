@@ -5,8 +5,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.FullScreenContentCallback
+import com.google.android.libraries.ads.mobile.sdk.common.FullScreenContentError
+import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -45,7 +45,7 @@ import org.robolectric.annotation.Config
 /** 실패 분류·분류별 재시도·시간 제한·표시 실패 분류·앱 ID 검사. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [23, 30, 35])
+@Config(sdk = [24, 30, 35])
 class RetryAndErrorTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val activity: Activity = Robolectric.buildActivity(Activity::class.java).get()
@@ -57,10 +57,10 @@ class RetryAndErrorTest {
 
     @After fun tearDown() = job.cancel()
 
-    private fun err(reason: AdErrorReason, code: Int = 0) = AdsException(AdsErrorKind.Load, code, "x", reason = reason)
+    private fun err(reason: AdErrorReason, code: Int = 0) = AdsException(AdsErrorKind.Load, code, "x", null, reason)
 
     private fun TestScope.controller(
-        preload: PreloadPolicy = PreloadPolicy(),
+        preload: PreloadPolicy = preload(),
         chain: List<Pair<AdUnit, String>> = listOf(AdUnit.interstitial("i", "") to "id"),
     ) = FullScreenAdController(
         AdFormat.Interstitial, "p", chain, context, provider, AdFrequencyPolicy.Unlimited, preload,
@@ -72,15 +72,15 @@ class RetryAndErrorTest {
 
     @Test fun retryableFlagsPerReason() {
         val stop = setOf(AdErrorReason.InvalidRequest, AdErrorReason.AppIdMissing, AdErrorReason.AppIdMismatch, AdErrorReason.Misconfigured)
-        AdErrorReason.entries.forEach { assertEquals(it.name, it !in stop, it.retryable) }
+        AdErrorReason.values.forEach { assertEquals(it.name, it !in stop, it.retryable) }
     }
 
     @Test fun nextStepPerReason() {
-        val p = PreloadPolicy(maxRetries = 3, retryBackoffMillis = 100, noFillBackoffMillis = 10_000)
+        val p = preload(maxRetries = 3, retryBackoffMillis = 100, noFillBackoffMillis = 10_000)
         assertEquals(RetryStep.After(10_000), p.nextStep(AdErrorReason.NoFill, 0))
         assertEquals(RetryStep.After(40_000), p.nextStep(AdErrorReason.NoFill, 2))
         assertEquals(RetryStep.AwaitNetwork, p.nextStep(AdErrorReason.Network, 0))
-        assertEquals(RetryStep.After(200), p.copy(retryOnNetworkRestore = false).nextStep(AdErrorReason.Network, 1))
+        assertEquals(RetryStep.After(200), p.toBuilder().retryOnNetworkRestore(false).build().nextStep(AdErrorReason.Network, 1))
         for (r in listOf(AdErrorReason.Internal, AdErrorReason.Timeout, AdErrorReason.Unknown, AdErrorReason.Expired)) {
             assertEquals(RetryStep.After(100), p.nextStep(r, 0))
         }
@@ -88,7 +88,7 @@ class RetryAndErrorTest {
             assertEquals(RetryStep.Stop, p.nextStep(r, 0))
         }
         assertEquals(RetryStep.Stop, p.nextStep(AdErrorReason.NoFill, 3))
-        assertEquals(RetryStep.Stop, PreloadPolicy(maxRetries = 0).nextStep(AdErrorReason.Network, 0))
+        assertEquals(RetryStep.Stop, preload(maxRetries = 0).nextStep(AdErrorReason.Network, 0))
     }
 
     @Test fun doubledSaturates() {
@@ -102,11 +102,11 @@ class RetryAndErrorTest {
     @Test fun preloadPolicyRejectsNegativeNewFields() {
         assertEquals(
             "noFillBackoffMillis 는 0 이상이어야 합니다: -1",
-            runCatching { PreloadPolicy(noFillBackoffMillis = -1) }.exceptionOrNull()!!.message,
+            runCatching { preload(noFillBackoffMillis = -1) }.exceptionOrNull()!!.message,
         )
         assertEquals(
             "loadTimeoutMillis 는 0 이상이어야 합니다: -1",
-            runCatching { PreloadPolicy(loadTimeoutMillis = -1) }.exceptionOrNull()!!.message,
+            runCatching { preload(loadTimeoutMillis = -1) }.exceptionOrNull()!!.message,
         )
     }
 
@@ -114,7 +114,7 @@ class RetryAndErrorTest {
 
     @Test fun noFillWaitsLongBackoff() = runTest {
         provider.enqueueError(err(AdErrorReason.NoFill, 3))
-        val c = controller(PreloadPolicy(noFillBackoffMillis = 60_000, retryBackoffMillis = 1))
+        val c = controller(preload(noFillBackoffMillis = 60_000, retryBackoffMillis = 1))
         assertEquals(1, provider.loads)
         assertEquals(AdErrorReason.NoFill, c.lastError.value!!.reason)
         advanceTimeBy(59_999)
@@ -129,7 +129,7 @@ class RetryAndErrorTest {
 
     @Test fun invalidRequestIsNotRetried() = runTest {
         provider.enqueueError(err(AdErrorReason.InvalidRequest, 1))
-        val c = controller(PreloadPolicy(maxRetries = 5, retryBackoffMillis = 1))
+        val c = controller(preload(maxRetries = 5, retryBackoffMillis = 1))
         advanceTimeBy(1_000_000)
         assertEquals(1, provider.loads)
         assertEquals(FullScreenAdState.Idle, c.state.value)
@@ -141,7 +141,7 @@ class RetryAndErrorTest {
     @Test fun networkErrorRetriesWhenConnectionReturns() = runTest {
         online.value = false
         provider.enqueueError(err(AdErrorReason.Network, 2))
-        val c = controller(PreloadPolicy(retryBackoffMillis = 1))
+        val c = controller(preload(retryBackoffMillis = 1))
         advanceTimeBy(10_000_000)
         assertEquals(1, provider.loads) // 끊긴 동안은 시간이 지나도 다시 요청하지 않는다
         assertEquals(FullScreenAdState.Loading, c.state.value)
@@ -154,14 +154,14 @@ class RetryAndErrorTest {
     @Test fun networkErrorWithoutRestoreUsesBackoff() = runTest {
         online.value = false
         provider.enqueueError(err(AdErrorReason.Network, 2))
-        controller(PreloadPolicy(retryBackoffMillis = 500, retryOnNetworkRestore = false))
+        controller(preload(retryBackoffMillis = 500, retryOnNetworkRestore = false))
         advanceTimeBy(501)
         assertEquals(2, provider.loads)
     }
 
     @Test fun timeoutIsClassifiedAndRetried() = runTest {
         provider.gate = CompletableDeferred()
-        val c = controller(PreloadPolicy(loadTimeoutMillis = 1_000, retryBackoffMillis = 10, maxRetries = 1))
+        val c = controller(preload(loadTimeoutMillis = 1_000, retryBackoffMillis = 10, maxRetries = 1))
         advanceTimeBy(1_001)
         val e = c.lastError.value!!
         assertEquals(AdErrorReason.Timeout, e.reason)
@@ -174,7 +174,7 @@ class RetryAndErrorTest {
     @Test fun zeroTimeoutWaitsForever() = runTest {
         val gate = CompletableDeferred<Unit>()
         provider.gate = gate
-        val c = controller(PreloadPolicy(loadTimeoutMillis = 0))
+        val c = controller(preload(loadTimeoutMillis = 0))
         advanceTimeBy(Long.MAX_VALUE / 4)
         assertEquals(FullScreenAdState.Loading, c.state.value)
         gate.complete(Unit)
@@ -186,7 +186,7 @@ class RetryAndErrorTest {
         provider.enqueueError(err(AdErrorReason.NoFill))
         provider.enqueueError(err(AdErrorReason.InvalidRequest))
         val c = controller(
-            PreloadPolicy(maxRetries = 3),
+            preload(maxRetries = 3),
             chain = listOf(AdUnit.interstitial("a", "") to "a", AdUnit.interstitial("b", "") to "b"),
         )
         advanceTimeBy(10_000_000)
@@ -197,8 +197,8 @@ class RetryAndErrorTest {
 
     @Test fun showFailureKeepsReasonInResultEventAndLastError() = runTest {
         provider.enqueueAd()
-        val c = controller(PreloadPolicy(reloadAfterDismiss = false))
-        val reused = AdsException(AdsErrorKind.Show, 1, "reused", reason = AdErrorReason.AlreadyUsed)
+        val c = controller(preload(reloadAfterDismiss = false))
+        val reused = AdsException(AdsErrorKind.Show, 1, "reused", null, AdErrorReason.AlreadyUsed)
         provider.produced.first().let { ad ->
             val r = c.show(activity, object : net.plumt.ads.network.FullScreenAdCallbacks {})
             assertEquals(ShowResult.Started, r)
@@ -211,27 +211,31 @@ class RetryAndErrorTest {
     // ---- SDK 코드 매핑 ----
 
     @Test fun loadCodesMapToReasons() {
-        assertEquals(AdErrorReason.NoFill, loadReason(AdRequest.ERROR_CODE_NO_FILL))
-        assertEquals(AdErrorReason.NoFill, loadReason(AdRequest.ERROR_CODE_MEDIATION_NO_FILL))
-        assertEquals(AdErrorReason.Network, loadReason(AdRequest.ERROR_CODE_NETWORK_ERROR))
-        assertEquals(AdErrorReason.InvalidRequest, loadReason(AdRequest.ERROR_CODE_INVALID_REQUEST))
-        assertEquals(AdErrorReason.InvalidRequest, loadReason(AdRequest.ERROR_CODE_INVALID_AD_STRING))
-        assertEquals(AdErrorReason.AppIdMissing, loadReason(AdRequest.ERROR_CODE_APP_ID_MISSING))
-        assertEquals(AdErrorReason.AppIdMismatch, loadReason(AdRequest.ERROR_CODE_REQUEST_ID_MISMATCH))
-        assertEquals(AdErrorReason.Internal, loadReason(AdRequest.ERROR_CODE_INTERNAL_ERROR))
+        fun r(code: LoadAdError.ErrorCode) = loadReason(code.value)
+        assertEquals(AdErrorReason.NoFill, r(LoadAdError.ErrorCode.NO_FILL))
+        assertEquals(AdErrorReason.Network, r(LoadAdError.ErrorCode.NETWORK_ERROR))
+        assertEquals(AdErrorReason.Timeout, r(LoadAdError.ErrorCode.TIMEOUT))
+        assertEquals(AdErrorReason.InvalidRequest, r(LoadAdError.ErrorCode.INVALID_REQUEST))
+        assertEquals(AdErrorReason.InvalidRequest, r(LoadAdError.ErrorCode.NOT_FOUND))
+        assertEquals(AdErrorReason.AppIdMissing, r(LoadAdError.ErrorCode.APP_ID_MISSING))
+        assertEquals(AdErrorReason.AppIdMismatch, r(LoadAdError.ErrorCode.REQUEST_ID_MISMATCH))
+        assertEquals(AdErrorReason.Internal, r(LoadAdError.ErrorCode.INTERNAL_ERROR))
+        assertEquals(AdErrorReason.Internal, r(LoadAdError.ErrorCode.INVALID_AD_RESPONSE))
+        assertEquals(AdErrorReason.Unknown, r(LoadAdError.ErrorCode.CANCELLED))
         assertEquals(AdErrorReason.Unknown, loadReason(999))
         assertEquals(AdErrorReason.Unknown, loadReason(-1))
-        val e = loadException(AdRequest.ERROR_CODE_NO_FILL, "m")
+        val e = loadException(LoadAdError.ErrorCode.NO_FILL.value, "m")
         assertEquals(AdsErrorKind.Load, e.kind)
         assertEquals(AdErrorReason.NoFill, e.reason)
     }
 
     @Test fun showCodesMapToReasons() {
-        assertEquals(AdErrorReason.AlreadyUsed, showReason(FullScreenContentCallback.ERROR_CODE_AD_REUSED))
-        assertEquals(AdErrorReason.Expired, showReason(FullScreenContentCallback.ERROR_CODE_NOT_READY))
-        assertEquals(AdErrorReason.AppInBackground, showReason(FullScreenContentCallback.ERROR_CODE_APP_NOT_FOREGROUND))
-        assertEquals(AdErrorReason.Internal, showReason(FullScreenContentCallback.ERROR_CODE_INTERNAL_ERROR))
-        assertEquals(AdErrorReason.Internal, showReason(FullScreenContentCallback.ERROR_CODE_MEDIATION_SHOW_ERROR))
+        fun r(code: FullScreenContentError.ErrorCode) = showReason(code.value)
+        assertEquals(AdErrorReason.AlreadyUsed, r(FullScreenContentError.ErrorCode.AD_REUSED))
+        assertEquals(AdErrorReason.Expired, r(FullScreenContentError.ErrorCode.H5_SHOW_AD_NOT_LOADED))
+        assertEquals(AdErrorReason.AppInBackground, r(FullScreenContentError.ErrorCode.APP_NOT_FOREGROUND))
+        assertEquals(AdErrorReason.Internal, r(FullScreenContentError.ErrorCode.INTERNAL_ERROR))
+        assertEquals(AdErrorReason.Internal, r(FullScreenContentError.ErrorCode.MEDIATION_SHOW_ERROR))
         assertEquals(AdErrorReason.Unknown, showReason(77))
         assertEquals(AdsErrorKind.Show, showException(1, "m").kind)
     }
@@ -281,8 +285,7 @@ class RetryAndErrorTest {
     private class AppIdSdk(private val id: String?) : MobileAdsSdk {
         var initCalls = 0
         override fun applicationId(context: Context): String? = id
-        override fun applyRequestConfiguration(config: AdsConfig) = Unit
-        override fun initialize(context: Context, onComplete: () -> Unit) {
+        override fun initialize(context: Context, appId: String, requestConfig: AdsConfig?, onComplete: () -> Unit) {
             initCalls++
             onComplete()
         }
@@ -292,14 +295,14 @@ class RetryAndErrorTest {
         val io = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
         val sdk = AppIdSdk(TestAdIds.APP_ID)
         try {
-            MobileAdsNetwork(sdk, io).initialize(context, AdsConfig(mode = AdsMode.Production))
+            MobileAdsNetwork(sdk, io).initialize(context, config(mode = AdsMode.Production))
             fail()
         } catch (e: AdsException) {
             assertEquals(AdsException.CODE_TEST_APP_ID_IN_PRODUCTION, e.code)
         }
         assertEquals(0, sdk.initCalls)
         val dev = AppIdSdk(TestAdIds.APP_ID)
-        MobileAdsNetwork(dev, io).initialize(context, AdsConfig(mode = AdsMode.Development))
+        MobileAdsNetwork(dev, io).initialize(context, config(mode = AdsMode.Development))
         assertEquals(1, dev.initCalls)
         io.close()
     }

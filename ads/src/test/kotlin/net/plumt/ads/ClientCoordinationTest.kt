@@ -31,7 +31,7 @@ import org.robolectric.annotation.Config
 /** 클라이언트 단위 공유 상태: 빈도 정책·전면형 겹침 조율·동의 수집 결과·초기화 재시도. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [23, 33, 35])
+@Config(sdk = [24, 33, 35])
 class ClientCoordinationTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val activity: Activity = Robolectric.buildActivity(Activity::class.java).get()
@@ -44,7 +44,7 @@ class ClientCoordinationTest {
 
     private fun TestScope.client(
         source: AdsEnabledSource = AdsEnabledSource.Always,
-        config: AdsConfig = AdsConfig(),
+        config: AdsConfig = config(),
         freq: AdFrequencyStore = store,
     ) = DefaultAdsClient(
         context, config, source, events, network, gateway, clock,
@@ -86,13 +86,13 @@ class ClientCoordinationTest {
         val c = client()
         val open = c.fullScreenController(AdUnit("open", AdFormat.AppOpen, "id"), "open")
         assertEquals(ShowResult.Suppressed(SuppressReason.FrequencyCapped), open.show(activity))
-        assertEquals(1L, store.getLong(DefaultAdsClient.KEY_APP_OPEN_LAUNCHES))
+        assertEquals(1L, store.getLong(DefaultPolicies.KEY_APP_OPEN_LAUNCHES))
         open.destroy()
     }
 
     @Test fun appOpenWaitsCooldownAfterOtherFullScreenDismissed() = runTest {
-        store.putLong(DefaultAdsClient.KEY_APP_OPEN_LAUNCHES, 5)
-        val c = client(config = AdsConfig(appOpenCooldownMillis = 10_000))
+        store.putLong(DefaultPolicies.KEY_APP_OPEN_LAUNCHES, 5)
+        val c = client(config = config(appOpenCooldownMillis = 10_000))
         val reward = c.fullScreenController(AdUnit("reward", AdFormat.Rewarded, "id"), "reward")
         val open = c.fullScreenController(AdUnit("open", AdFormat.AppOpen, "id"), "open")
         assertEquals(ShowResult.Started, reward.show(activity))
@@ -133,22 +133,22 @@ class ClientCoordinationTest {
     }
 
     @Test fun appOpenSkipLaunchesConfigurable() = runTest {
-        val c = client(config = AdsConfig(appOpenSkipFirstLaunches = 0))
+        val c = client(config = config(appOpenSkipFirstLaunches = 0))
         val open = c.fullScreenController(AdUnit("open", AdFormat.AppOpen, "id"), "open")
         assertEquals(ShowResult.Started, open.show(activity)) // 첫 실행부터 보인다
         open.destroy()
     }
 
     @Test fun appOpenSkipMoreLaunchesConfigurable() = runTest {
-        store.putLong(DefaultAdsClient.KEY_APP_OPEN_LAUNCHES, 1) // 이번이 두 번째 실행
-        val c = client(config = AdsConfig(appOpenSkipFirstLaunches = 3))
+        store.putLong(DefaultPolicies.KEY_APP_OPEN_LAUNCHES, 1) // 이번이 두 번째 실행
+        val c = client(config = config(appOpenSkipFirstLaunches = 3))
         val open = c.fullScreenController(AdUnit("open", AdFormat.AppOpen, "id"), "open")
         assertEquals(ShowResult.Suppressed(SuppressReason.FrequencyCapped), open.show(activity))
         open.destroy()
     }
 
     @Test fun appOpenMinIntervalConfigurable() = runTest {
-        val c = client(config = AdsConfig(appOpenSkipFirstLaunches = 0, appOpenMinIntervalMillis = 5_000, appOpenCooldownMillis = 0))
+        val c = client(config = config(appOpenSkipFirstLaunches = 0, appOpenMinIntervalMillis = 5_000, appOpenCooldownMillis = 0))
         val open = c.fullScreenController(AdUnit("open", AdFormat.AppOpen, "id"), "open")
         assertEquals(ShowResult.Started, open.show(activity))
         network.appOpenProvider.lastCallbacks().onShown()
@@ -161,7 +161,7 @@ class ClientCoordinationTest {
     }
 
     @Test fun appOpenDefaultIntervalIsTwoMinutes() = runTest {
-        val c = client(config = AdsConfig(appOpenSkipFirstLaunches = 0))
+        val c = client(config = config(appOpenSkipFirstLaunches = 0))
         val open = c.fullScreenController(AdUnit("open", AdFormat.AppOpen, "id"), "open")
         assertEquals(ShowResult.Started, open.show(activity))
         network.appOpenProvider.lastCallbacks().onShown()
@@ -174,28 +174,28 @@ class ClientCoordinationTest {
     }
 
     @Test fun appOpenConfigDefaultsAndValidation() {
-        val d = AdsConfig()
+        val d = config()
         assertEquals(120_000L, d.appOpenMinIntervalMillis)
         assertEquals(1, d.appOpenSkipFirstLaunches)
         assertEquals(AdsConfig.DEFAULT_APP_OPEN_MIN_INTERVAL_MILLIS, d.appOpenMinIntervalMillis)
         assertEquals(AdsConfig.DEFAULT_APP_OPEN_SKIP_FIRST_LAUNCHES, d.appOpenSkipFirstLaunches)
         assertEquals(
             "appOpenMinIntervalMillis 는 0 이상이어야 합니다: -1",
-            assertThrows(IllegalArgumentException::class.java) { AdsConfig(appOpenMinIntervalMillis = -1) }.message,
+            assertThrows(IllegalArgumentException::class.java) { config(appOpenMinIntervalMillis = -1) }.message,
         )
         assertEquals(
             "appOpenSkipFirstLaunches 는 0 이상이어야 합니다: -2",
-            assertThrows(IllegalArgumentException::class.java) { AdsConfig(appOpenSkipFirstLaunches = -2) }.message,
+            assertThrows(IllegalArgumentException::class.java) { config(appOpenSkipFirstLaunches = -2) }.message,
         )
     }
 
     @Test fun configRejectsNegativeCooldown() {
         assertEquals(
             "appOpenCooldownMillis 는 0 이상이어야 합니다: -1",
-            assertThrows(IllegalArgumentException::class.java) { AdsConfig(appOpenCooldownMillis = -1) }.message,
+            assertThrows(IllegalArgumentException::class.java) { config(appOpenCooldownMillis = -1) }.message,
         )
-        assertEquals(60_000L, AdsConfig().appOpenCooldownMillis)
-        assertEquals(AdsConfig.DEFAULT_APP_OPEN_COOLDOWN_MILLIS, AdsConfig().appOpenCooldownMillis)
+        assertEquals(60_000L, config().appOpenCooldownMillis)
+        assertEquals(AdsConfig.DEFAULT_APP_OPEN_COOLDOWN_MILLIS, config().appOpenCooldownMillis)
     }
 
     // --- 동의 수집 결과 ---

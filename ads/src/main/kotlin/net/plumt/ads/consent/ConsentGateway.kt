@@ -36,7 +36,7 @@ internal class UmpConsentGateway(
     private val info: ConsentInformation = UserMessagingPlatform.getConsentInformation(context)
 
     override fun current(): ConsentSnapshot = ConsentSnapshot(
-        status = ConsentStatus.fromUmp(info.consentStatus),
+        status = consentStatusFromUmp(info.consentStatus),
         canRequestAds = info.canRequestAds(),
         privacyOptionsRequired =
             info.privacyOptionsRequirementStatus == ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED,
@@ -81,10 +81,11 @@ internal class UmpConsentGateway(
  * EEA 밖은 UMP 4.x 에서 사라질 `DEBUG_GEOGRAPHY_NOT_EEA` 대신 `DEBUG_GEOGRAPHY_OTHER` 를 쓴다.
  */
 internal fun ConsentDebugGeography.toUmpGeography(): Int? = when (this) {
-    ConsentDebugGeography.Disabled -> null
     ConsentDebugGeography.Eea -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA
     ConsentDebugGeography.NotEea -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_OTHER
     ConsentDebugGeography.RegulatedUsState -> ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_REGULATED_US_STATE
+    // Disabled 와, 새로 더한 값을 아직 옮기지 않은 경우 모두 디버그 설정을 넣지 않는다(실제 지역)
+    else -> null
 }
 
 private fun FormError.toException(): AdsException =

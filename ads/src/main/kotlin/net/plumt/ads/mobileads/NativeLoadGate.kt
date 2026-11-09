@@ -6,6 +6,7 @@ package net.plumt.ads.mobileads
  * - 실패 콜백은 그 요청이 끝났다는 뜻이다 — 로더가 아직 불러오는 중이라고 답해도 곧바로 끝낸다
  *   (받은 광고가 있으면 그것으로, 없으면 실패로). 예전엔 이 경우 다시 불리지 않아 영원히 기다렸다
  * - 광고 콜백은 [count] 장을 다 받았거나 로더가 더는 불러오지 않으면 끝낸다
+ * - 완료 콜백(Next-Gen `onAdLoadingCompleted`)은 받은 만큼으로 끝낸다. 한 장도 없으면 이유 없는 실패다
  * - 끝난 뒤 늦게 온 광고는 [Outcome.Late] 로 돌려 호출부가 놓게 한다
  */
 internal class NativeLoadGate<T>(private val count: Int) {
@@ -24,6 +25,11 @@ internal class NativeLoadGate<T>(private val count: Int) {
     fun onFailed(code: Int, message: String): Outcome<T> {
         if (done) return Outcome.Pending
         return finish(code, message)
+    }
+
+    fun onCompleted(): Outcome<T> {
+        if (done) return Outcome.Pending
+        return finish(null, null)
     }
 
     private fun finish(code: Int?, message: String?): Outcome<T> {

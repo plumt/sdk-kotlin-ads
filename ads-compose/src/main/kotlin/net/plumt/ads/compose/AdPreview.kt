@@ -94,7 +94,7 @@ internal fun MockNativeAdContent(mediaHeight: Dp?, colors: NativeAdColors?, modi
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.net_plumt_ads_preview_headline),
+                    text = stringResource(R.string.ads_preview_headline),
                     color = colors?.headline ?: MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
@@ -102,7 +102,7 @@ internal fun MockNativeAdContent(mediaHeight: Dp?, colors: NativeAdColors?, modi
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = stringResource(R.string.net_plumt_ads_preview_body),
+                    text = stringResource(R.string.ads_preview_body),
                     modifier = Modifier.padding(top = 2.dp),
                     color = colors?.body ?: MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
@@ -121,7 +121,7 @@ internal fun MockNativeAdContent(mediaHeight: Dp?, colors: NativeAdColors?, modi
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = stringResource(R.string.net_plumt_ads_preview_cta),
+                text = stringResource(R.string.ads_preview_cta),
                 color = colors?.ctaText ?: Color(0xFFFBF8F2),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
@@ -142,7 +142,7 @@ internal fun MockBanner(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = stringResource(R.string.net_plumt_ads_preview_banner),
+            text = stringResource(R.string.ads_preview_banner),
             color = MockInk,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,

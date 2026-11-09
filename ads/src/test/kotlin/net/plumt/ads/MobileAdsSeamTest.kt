@@ -42,12 +42,13 @@ class MobileAdsSeamTest {
         override fun applicationId(context: Context): String? = appId
         var initThread: String? = null
         var onComplete: (() -> Unit)? = null
-        override fun applyRequestConfiguration(config: AdsConfig) {
-            calls += "config"
-        }
+        var initAppId: String? = null
 
-        override fun initialize(context: Context, onComplete: () -> Unit) {
+        override fun initialize(context: Context, appId: String, requestConfig: AdsConfig?, onComplete: () -> Unit) {
+            // 요청 설정은 초기화 설정에 담겨 함께 넘어간다(Next-Gen 은 초기화 전 MobileAds 호출을 막는다)
+            if (requestConfig != null) calls += "config"
             calls += "init"
+            initAppId = appId
             initThread = Thread.currentThread().name
             fail?.let { throw it }
             this.onComplete = onComplete
@@ -60,17 +61,18 @@ class MobileAdsSeamTest {
     @Test fun initializeRunsOffCallerThreadOnce() = runBlocking {
         val sdk = FakeSdk()
         val net = MobileAdsNetwork(sdk, io)
-        net.initialize(context, AdsConfig())
+        net.initialize(context, config())
         assertTrue(sdk.initThread!!, sdk.initThread!!.startsWith("ads-io-test"))
         assertFalse(Thread.currentThread().name.startsWith("ads-io-test"))
         assertEquals(listOf("init"), sdk.calls) // 기본 설정은 요청 설정을 건드리지 않는다
-        net.initialize(context, AdsConfig())
+        assertEquals(TestAdIds.APP_ID, sdk.initAppId) // 매니페스트 앱 ID 를 초기화 설정으로 넘긴다
+        net.initialize(context, config())
         assertEquals(listOf("init"), sdk.calls)
     }
 
     @Test fun requestConfigurationAppliedBeforeInitialize() = runBlocking {
         val sdk = FakeSdk()
-        MobileAdsNetwork(sdk, io).initialize(context, AdsConfig(audience = AdAudience.forTarget(AdTarget.Teen)))
+        MobileAdsNetwork(sdk, io).initialize(context, config(audience = AdAudience.forTarget(AdTarget.Teen)))
         assertEquals(listOf("config", "init"), sdk.calls)
     }
 
@@ -78,7 +80,7 @@ class MobileAdsSeamTest {
         val boom = IllegalStateException("앱 ID 없음")
         val net = MobileAdsNetwork(FakeSdk(fail = boom), io)
         try {
-            net.initialize(context, AdsConfig())
+            net.initialize(context, config())
             fail()
         } catch (e: AdsException) {
             assertEquals(AdsErrorKind.Initialization, e.kind)
@@ -92,13 +94,13 @@ class MobileAdsSeamTest {
     @Test fun cancellationPropagatesAndAllowsRetry() = runTest {
         val sdk = FakeSdk(complete = false)
         val net = MobileAdsNetwork(sdk, UnconfinedTestDispatcher(testScheduler))
-        val call = async { net.initialize(context, AdsConfig()) }
+        val call = async { net.initialize(context, config()) }
         runCurrent()
         call.cancel()
         runCurrent()
         assertTrue(call.isCancelled)
         sdk.complete = true
-        net.initialize(context, AdsConfig())
+        net.initialize(context, config())
         assertEquals(listOf("init", "init"), sdk.calls)
     }
 
@@ -109,11 +111,11 @@ class MobileAdsSeamTest {
     }
 
     @Test fun needsRequestConfigurationOnlyWhenCustomized() {
-        assertFalse(AdsConfig().needsRequestConfiguration())
-        assertTrue(AdsConfig(testDeviceIds = listOf("x")).needsRequestConfiguration())
-        assertTrue(AdsConfig(audience = AdAudience(childDirected = AdFlag.No)).needsRequestConfiguration())
-        assertTrue(AdsConfig(audience = AdAudience(underAgeOfConsent = AdFlag.Yes)).needsRequestConfiguration())
-        assertTrue(AdsConfig(audience = AdAudience(maxContentRating = AdContentRating.PG)).needsRequestConfiguration())
+        assertFalse(config().needsRequestConfiguration())
+        assertTrue(config(testDeviceIds = listOf("x")).needsRequestConfiguration())
+        assertTrue(config(audience = AdAudience.Default.withChildDirected(AdFlag.No)).needsRequestConfiguration())
+        assertTrue(config(audience = AdAudience.Default.withUnderAgeOfConsent(AdFlag.Yes)).needsRequestConfiguration())
+        assertTrue(config(audience = AdAudience.Default.withMaxContentRating(AdContentRating.PG)).needsRequestConfiguration())
     }
 
     // --- 취소 경합 (L5) ---
@@ -161,6 +163,19 @@ class MobileAdsSeamTest {
             g.getField("DEBUG_GEOGRAPHY_REGULATED_US_STATE").get(null),
             ConsentDebugGeography.RegulatedUsState.toUmpGeography(),
         )
+    }
+
+    @Test fun sdkCallbacksAreDeliveredOnMainThread() {
+        // Next-Gen SDK 는 콜백을 백그라운드 스레드에서 부른다 — 메인으로 옮기고, 이미 메인이면 곧바로 부른다
+        var direct = false
+        net.plumt.ads.mobileads.onMainThread { direct = true }
+        assertTrue(direct)
+        var thread: Thread? = null
+        val worker = Thread { net.plumt.ads.mobileads.onMainThread { thread = Thread.currentThread() } }
+        worker.start()
+        worker.join()
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+        assertEquals(android.os.Looper.getMainLooper().thread, thread)
     }
 
     @Test fun videoNativeNeedsMediaView() {

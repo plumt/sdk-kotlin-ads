@@ -5,8 +5,11 @@ import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,10 +20,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import net.plumt.ads.consent.ConsentFormResult
 import net.plumt.ads.consent.ConsentGateway
 import net.plumt.ads.consent.ConsentManager
 import net.plumt.ads.consent.DefaultConsentManager
 import net.plumt.ads.consent.UmpConsentGateway
+import net.plumt.ads.mobileads.MobileAdsNetwork
 import net.plumt.ads.network.AdNetwork
 
 internal class DefaultAdsClient(
@@ -45,7 +50,7 @@ internal class DefaultAdsClient(
     private val effective: Pair<AdsConfig, Set<AdsWarning>> = config.effectiveFor(mode)
     private val effectiveConfig: AdsConfig = effective.first
 
-    private val consentManager = DefaultConsentManager(gateway)
+    private val consentManager = DefaultConsentManager(gateway, scope)
     override val consent: ConsentManager = consentManager
 
     private val enabledState = MutableStateFlow(false)
@@ -74,12 +79,7 @@ internal class DefaultAdsClient(
     private val coordinator = FullScreenCoordinator(clock, config.appOpenCooldownMillis)
 
     // 형식별 공유 정책. 컨트롤러가 다시 만들어져도 같은 인스턴스를 쓴다. 시작 유예는 클라이언트 생성 시점부터 센다
-    private val defaultPolicies: Map<AdFormat, AdFrequencyPolicy> = mapOf(
-        AdFormat.Interstitial to newPolicy(AdFormat.Interstitial, ""),
-        AdFormat.AppOpen to newPolicy(AdFormat.AppOpen, ""),
-        AdFormat.Rewarded to AdFrequencyPolicy.Unlimited,
-    )
-    private val unitPolicies = HashMap<String, AdFrequencyPolicy>()
+    private val policies = DefaultPolicies(config, wallClock, frequencyStore)
     private val prefetched = HashMap<Pair<AdUnit, String>, PrefetchedNativeAd>()
 
     init {
@@ -88,6 +88,12 @@ internal class DefaultAdsClient(
         }
         if (mode == AdsMode.Production) {
             units.all.forEach { unit -> unit.problemFor(mode)?.let { recordConfiguration(it) } }
+        }
+        // 앱 ID 는 동의보다 먼저 본다. 없으면 UMP 가 먼저 실패해 초기화(같은 검사)까지 가지 않는다 — 새 설치에서도 드러나게 한다.
+        // 광고는 초기화 전이라 그대로 나가지 않는다. 같은 원인이 초기화에서 다시 와도 목록에는 한 번만 든다
+        (network as? MobileAdsNetwork)?.appIdProblem(context, mode)?.let { problem ->
+            initError.value = problem
+            recordConfiguration(problem)
         }
         scope.launch {
             enabledSource.enabled
@@ -141,36 +147,52 @@ internal class DefaultAdsClient(
         }
         // 광고를 끈 사용자에게 동의 폼을 띄우지 않는다
         if (!adsEnabled.value) return ConsentGatherResult.SkippedAdsDisabled
-        if (!consentManager.gatherIfIdle(activity)) return ConsentGatherResult.AlreadyInProgress
-        // 동의가 그대로여서 상태 흐름이 다시 방출하지 않아도, 지난 초기화 실패를 여기서 다시 시도한다
-        maybeInitialize()
-        return ConsentGatherResult.Completed
+        return when (val form = consentManager.gather(activity)) {
+            ConsentFormResult.AlreadyInProgress -> ConsentGatherResult.AlreadyInProgress
+            is ConsentFormResult.Failed -> ConsentGatherResult.Failed(form.error)
+            ConsentFormResult.Completed -> {
+                // 동의가 그대로여서 상태 흐름이 다시 방출하지 않아도, 지난 초기화 실패를 여기서 다시 시도한다
+                maybeInitialize()
+                ConsentGatherResult.Completed
+            }
+        }
     }
 
-    override fun gatherConsentOnFirstResume(application: Application, onResult: (Result<ConsentGatherResult>) -> Unit) {
-        application.registerActivityLifecycleCallbacks(FirstResumeConsent(application, onResult))
+    override fun gatherConsent(
+        activity: Activity,
+        switchTimeoutMillis: Long,
+        onResult: (ConsentGatherResult) -> Unit,
+    ): AdsCallHandle {
+        require(switchTimeoutMillis >= 0) { "switchTimeoutMillis 는 0 이상이어야 합니다: $switchTimeoutMillis" }
+        return scope.launchCallback({ gatherConsent(activity, switchTimeoutMillis) }, onResult)
+    }
+
+    override fun gatherConsentOnFirstResume(
+        application: Application,
+        onResult: (ConsentGatherResult) -> Unit,
+    ): AdsCallHandle {
+        val done = Job(scope.coroutineContext[Job])
+        val callbacks = FirstResumeConsent(application, done, onResult)
+        application.registerActivityLifecycleCallbacks(callbacks)
+        return JobHandle(done) { application.unregisterActivityLifecycleCallbacks(callbacks) }
     }
 
     private inner class FirstResumeConsent(
         private val application: Application,
-        private val onResult: (Result<ConsentGatherResult>) -> Unit,
+        private val done: CompletableJob,
+        private val onResult: (ConsentGatherResult) -> Unit,
     ) : Application.ActivityLifecycleCallbacks {
         private var started = false
 
         override fun onActivityResumed(activity: Activity) {
-            if (started || activity.isFinishing) return
+            if (started || activity.isFinishing || !done.isActive) return
             started = true
             application.unregisterActivityLifecycleCallbacks(this)
-            scope.launch {
-                val result = try {
-                    Result.success(gatherConsent(activity))
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Result.failure(e)
-                }
+            scope.launch(done) {
+                val result = gatherConsent(activity)
+                ensureActive()
                 onResult(result)
-            }
+            }.invokeOnCompletion { done.complete() }
         }
 
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
@@ -181,28 +203,9 @@ internal class DefaultAdsClient(
         override fun onActivityDestroyed(activity: Activity) = Unit
     }
 
-    override fun defaultPolicy(format: AdFormat): AdFrequencyPolicy =
-        requireNotNull(defaultPolicies[format]) { "전면형 형식이 아닙니다: $format (Interstitial·Rewarded·AppOpen 만 허용)" }
+    override fun defaultPolicy(format: AdFormat): AdFrequencyPolicy = policies.forFormat(format)
 
-    override fun defaultPolicy(unit: AdUnit, scope: FrequencyScope): AdFrequencyPolicy {
-        val shared = defaultPolicy(unit.format)
-        if (scope == FrequencyScope.PerFormat || shared === AdFrequencyPolicy.Unlimited) return shared
-        return unitPolicies.getOrPut("${unit.format}|${unit.name}") { newPolicy(unit.format, ".unit.${unit.name}") }
-    }
-
-    private fun newPolicy(format: AdFormat, keySuffix: String): AdFrequencyPolicy = when (format) {
-        AdFormat.Interstitial -> IntervalFrequencyPolicy(
-            clock = wallClock, store = frequencyStore, key = KEY_INTERSTITIAL + keySuffix,
-        )
-        AdFormat.AppOpen -> AdFrequencyPolicy.all(
-            IntervalFrequencyPolicy(
-                minIntervalMillis = config.appOpenMinIntervalMillis, initialDelayMillis = 0,
-                clock = wallClock, store = frequencyStore, key = KEY_APP_OPEN + keySuffix,
-            ),
-            LaunchCountFrequencyPolicy(config.appOpenSkipFirstLaunches, frequencyStore, KEY_APP_OPEN_LAUNCHES + keySuffix),
-        )
-        else -> AdFrequencyPolicy.Unlimited
-    }
+    override fun defaultPolicy(unit: AdUnit, scope: FrequencyScope): AdFrequencyPolicy = policies.forUnit(unit, scope)
 
     private fun maybeInitialize() {
         if (adsEnabled.value && consent.snapshot.value.canRequestAds) initializeNow()
@@ -238,25 +241,19 @@ internal class DefaultAdsClient(
         return (listOf(unit) + fallbacks).distinct().mapNotNull { u -> adUnitId(u, placement)?.let { u to it } }
     }
 
-    override fun fullScreenController(
-        unit: AdUnit,
-        placement: String,
-        policy: AdFrequencyPolicy?,
-        preload: PreloadPolicy,
-        fallbacks: List<AdUnit>,
-        frequencyScope: FrequencyScope,
-    ): FullScreenAdController {
+    override fun fullScreenController(unit: AdUnit, options: FullScreenAdOptions): FullScreenAdController {
         unit.requireFormat(AdFormat.Interstitial, AdFormat.Rewarded, AdFormat.AppOpen)
         val provider = when (unit.format) {
             AdFormat.Interstitial -> network.interstitial
             AdFormat.Rewarded -> network.rewarded
             else -> network.appOpen
         }
+        val placement = options.placement ?: unit.name
         require(placement.isNotBlank()) { "placement 가 비었습니다: name=${unit.name}" }
-        val chain = resolveChain(unit, fallbacks, placement)
+        val chain = resolveChain(unit, options.fallbacks, placement)
         return FullScreenAdController(
-            unit.format, placement, chain, context, provider, policy ?: defaultPolicy(unit, frequencyScope), preload,
-            adsAvailable, events, clock, scope, coordinator, connectivity,
+            unit.format, placement, chain, context, provider, options.policy ?: defaultPolicy(unit, options.frequencyScope),
+            options.preload, adsAvailable, events, clock, scope, coordinator, connectivity,
         )
     }
 
@@ -279,29 +276,67 @@ internal class DefaultAdsClient(
     override fun close() = scope.cancel()
 
     companion object {
-        const val KEY_INTERSTITIAL = "net.plumt.ads.interstitial"
-        const val KEY_APP_OPEN = "net.plumt.ads.app_open"
-        const val KEY_APP_OPEN_LAUNCHES = "net.plumt.ads.app_open.launches"
-
-        @Suppress("LongParameterList")
-        fun create(
-            context: Context,
-            config: AdsConfig,
-            enabledSource: AdsEnabledSource,
-            events: AdEventListener,
-            network: AdNetwork,
-            frequencyStore: AdFrequencyStore,
-            units: AdUnitRegistry,
-            connectivity: AdConnectivity,
-        ): AdsClient {
+        fun create(context: Context, config: AdsConfig): AdsClient {
             val debuggable = context.isAppDebuggable()
             val umpConfig = config.effectiveFor(config.mode.resolve(debuggable)).first
             return DefaultAdsClient(
-                context, config, enabledSource, events, network,
-                UmpConsentGateway(context, umpConfig), AdClock.Default, defaultScope(), frequencyStore, AdClock.Wall,
-                debuggable, units, connectivity,
+                context, config, config.enabledSource, config.events, config.network ?: MobileAdsNetwork(),
+                UmpConsentGateway(context, umpConfig), AdClock.Default, defaultScope(),
+                config.frequencyStore ?: AdFrequencyStore.sharedPreferences(context), AdClock.Wall,
+                debuggable, config.units, config.connectivity ?: AdConnectivity.system(context),
             )
         }
+    }
+}
+
+/**
+ * 형식별·단위별 기본 빈도 정책. 같은 형식(단위)은 늘 같은 인스턴스를 돌려준다. 메인 스레드에서만 쓴다.
+ * 시작 유예는 이 객체를 만든 시점부터 센다.
+ */
+internal class DefaultPolicies(
+    private val config: AdsConfig,
+    private val clock: AdClock,
+    private val store: AdFrequencyStore,
+) {
+    private val shared: Map<AdFormat, AdFrequencyPolicy> = mapOf(
+        AdFormat.Interstitial to newPolicy(AdFormat.Interstitial, ""),
+        AdFormat.AppOpen to newPolicy(AdFormat.AppOpen, ""),
+        AdFormat.Rewarded to AdFrequencyPolicy.Unlimited,
+    )
+    private val perUnit = HashMap<String, AdFrequencyPolicy>()
+
+    fun forFormat(format: AdFormat): AdFrequencyPolicy =
+        requireNotNull(shared[format]) { "전면형 형식이 아닙니다: $format (Interstitial·Rewarded·AppOpen 만 허용)" }
+
+    fun forUnit(unit: AdUnit, scope: FrequencyScope): AdFrequencyPolicy {
+        val policy = forFormat(unit.format)
+        return when (scope) {
+            FrequencyScope.PerFormat -> policy
+            FrequencyScope.PerUnit ->
+                if (policy === AdFrequencyPolicy.Unlimited) {
+                    policy
+                } else {
+                    perUnit.getOrPut("${unit.format}|${unit.name}") { newPolicy(unit.format, ".unit.${unit.name}") }
+                }
+        }
+    }
+
+    private fun newPolicy(format: AdFormat, keySuffix: String): AdFrequencyPolicy = when (format) {
+        AdFormat.Interstitial -> IntervalFrequencyPolicy.builder()
+            .clock(clock).store(store).key(KEY_INTERSTITIAL + keySuffix).build()
+        AdFormat.AppOpen -> AdFrequencyPolicy.all(
+            IntervalFrequencyPolicy.builder()
+                .minIntervalMillis(config.appOpenMinIntervalMillis).initialDelayMillis(0)
+                .clock(clock).store(store).key(KEY_APP_OPEN + keySuffix).build(),
+            LaunchCountFrequencyPolicy(config.appOpenSkipFirstLaunches, store, KEY_APP_OPEN_LAUNCHES + keySuffix),
+        )
+        else -> AdFrequencyPolicy.Unlimited
+    }
+
+    companion object {
+        const val KEY_INTERSTITIAL = "net.plumt.ads.interstitial"
+        const val KEY_APP_OPEN = "net.plumt.ads.app_open"
+        const val KEY_APP_OPEN_LAUNCHES = "net.plumt.ads.app_open.launches"
     }
 }
 

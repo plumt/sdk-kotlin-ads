@@ -2,8 +2,9 @@ package net.plumt.ads.mobileads
 
 import android.content.Context
 import android.content.pm.PackageManager
-import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.RequestConfiguration
+import com.google.android.libraries.ads.mobile.sdk.MobileAds
+import com.google.android.libraries.ads.mobile.sdk.common.RequestConfiguration
+import com.google.android.libraries.ads.mobile.sdk.initialization.InitializationConfig
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -23,12 +24,13 @@ import net.plumt.ads.network.FullScreenAdProvider
 import net.plumt.ads.network.NativeAdProvider
 
 /**
- * Google Mobile Ads SDK 기본 구현. 비공식 연동이며 Google 과 무관하다.
- * 앱 ID 는 앱 매니페스트의 `com.google.android.gms.ads.APPLICATION_ID` meta-data 로 앱이 제공한다 —
- * 없으면 SDK 가 프로세스 시작 때(초기화 전) 앱을 `IllegalStateException` 으로 멈춘다.
- * 초기화 전에 앱 ID 와 모드를 맞춰 보고, 운영 모드에 시험 앱 ID 면 초기화하지 않고 [AdsErrorKind.Configuration] 으로 실패한다.
+ * GMA Next-Gen SDK 기본 구현. 비공식 연동이며 Google 과 무관하다.
+ * 앱 ID 는 앱 매니페스트의 `com.google.android.gms.ads.APPLICATION_ID` meta-data 로 앱이 제공한다 — 이 구현이 그 값을 읽어
+ * 초기화 설정으로 SDK 에 넘기고, 동의(UMP) SDK 도 같은 meta-data 를 읽는다.
+ * 초기화 전에 앱 ID 와 모드를 맞춰 보고, 비었거나 운영 모드에 시험 앱 ID 면 초기화하지 않고 [AdsErrorKind.Configuration] 으로 실패한다.
  *
- * 요청 설정은 호출 스레드에서 적용하고, `MobileAds.initialize` 는 백그라운드(IO) 스레드에서 부른다(콜드 스타트 ANR 방지).
+ * 요청 설정(아동·동의 연령·등급·시험 기기)은 초기화 설정에 담아 함께 넘긴다. `MobileAds.initialize` 는 백그라운드(IO)
+ * 스레드에서 부른다(SDK 요구 — 메인 스레드에서 부르면 ANR 이 날 수 있다). 광고는 초기화가 끝난 뒤에만 불러온다.
  */
 public class MobileAdsNetwork internal constructor(
     private val sdk: MobileAdsSdk,
@@ -45,16 +47,24 @@ public class MobileAdsNetwork internal constructor(
     override val banner: BannerProvider = MobileAdsBannerProvider
     override val native: NativeAdProvider = MobileAdsNativeProvider
 
+    /**
+     * 매니페스트 앱 ID 가 [mode] 와 맞지 않으면 그 원인, 맞으면 null. 동의(UMP)보다 먼저 클라이언트가 부른다 —
+     * 앱 ID 가 없으면 동의 수집이 먼저 실패해 [initialize] 까지 가지 않으므로, 새 설치에서도 설정 오류가 드러나게 한다.
+     */
+    internal fun appIdProblem(context: Context, mode: AdsMode): AdsException? = checkAppId(sdk.applicationId(context), mode)
+
     override suspend fun initialize(context: Context, config: AdsConfig) {
         if (initialized) return
         // 앱 ID 가 모드와 맞지 않으면 SDK 를 부르지 않는다 — 운영 빌드가 시험 앱 ID 로 광고를 요청하지 않게 닫힌 쪽으로 실패한다
-        checkAppId(sdk.applicationId(context), config.mode)?.let { throw it }
+        val rawAppId = sdk.applicationId(context)
+        checkAppId(rawAppId, config.mode)?.let { throw it }
+        val appId = rawAppId!!.trim()
         try {
-            if (config.needsRequestConfiguration()) sdk.applyRequestConfiguration(config)
+            val requestConfig = config.takeIf { it.needsRequestConfiguration() }
             val app = context.applicationContext
             withContext(ioDispatcher) {
                 suspendCancellableCoroutine { cont ->
-                    sdk.initialize(app) { if (cont.isActive) cont.resume(Unit) }
+                    sdk.initialize(app, appId, requestConfig) { if (cont.isActive) cont.resume(Unit) }
                 }
             }
             initialized = true
@@ -82,27 +92,28 @@ internal fun AdsConfig.needsRequestConfiguration(): Boolean =
 internal interface MobileAdsSdk {
     /** 매니페스트의 앱 ID. 없으면 null. */
     fun applicationId(context: Context): String? = readManifestAppId(context)
-    fun applyRequestConfiguration(config: AdsConfig)
-    fun initialize(context: Context, onComplete: () -> Unit)
+
+    /**
+     * [appId] 로 SDK 를 초기화한다. [requestConfig] 가 null 이 아니면 그 요청 설정(아동·동의 연령·등급·시험 기기)을 함께 넘긴다.
+     * 어댑터 초기화까지 끝나면 [onComplete] (아무 스레드).
+     */
+    fun initialize(context: Context, appId: String, requestConfig: AdsConfig?, onComplete: () -> Unit)
 }
 
 internal object RealMobileAdsSdk : MobileAdsSdk {
-    override fun applyRequestConfiguration(config: AdsConfig) {
-        val audience = config.audience
-        MobileAds.setRequestConfiguration(
-            RequestConfiguration.Builder()
-                .setTagForChildDirectedTreatment(audience.childDirected.toSdkTag())
-                .setTagForUnderAgeOfConsent(audience.underAgeOfConsent.toSdkTag())
-                .setMaxAdContentRating(audience.maxContentRating.toSdkRating())
-                .setTestDeviceIds(config.testDeviceIds)
-                .build()
-        )
-    }
-
-    override fun initialize(context: Context, onComplete: () -> Unit) {
-        MobileAds.initialize(context) { onComplete() }
+    override fun initialize(context: Context, appId: String, requestConfig: AdsConfig?, onComplete: () -> Unit) {
+        val init = InitializationConfig.Builder(appId)
+        requestConfig?.let { init.setRequestConfiguration(it.toRequestConfiguration()) }
+        MobileAds.initialize(context, init.build()) { onComplete() }
     }
 }
+
+private fun AdsConfig.toRequestConfiguration(): RequestConfiguration = RequestConfiguration.Builder()
+    .setTagForChildDirectedTreatment(audience.childDirected.toChildDirectedTag())
+    .setTagForUnderAgeOfConsent(audience.underAgeOfConsent.toUnderAgeTag())
+    .setMaxAdContentRating(audience.maxContentRating.toSdkRating())
+    .setTestDeviceIds(testDeviceIds)
+    .build()
 
 /** 광고 SDK 가 앱 ID 를 읽는 매니페스트 meta-data 이름. */
 internal const val APP_ID_META_DATA: String = "com.google.android.gms.ads.APPLICATION_ID"
@@ -145,15 +156,25 @@ internal fun checkAppId(appId: String?, mode: AdsMode): AdsException? {
     return null
 }
 
-/** SDK 의 `RequestConfiguration.TAG_FOR_*` 상수: 지정 안 함 -1, 아니오 0, 예 1. */
-internal fun AdFlag.toSdkTag(): Int = when (this) {
-    AdFlag.Unspecified -> -1
-    AdFlag.No -> 0
-    AdFlag.Yes -> 1
+/** SDK 의 `RequestConfiguration.TagForChildDirectedTreatment`. */
+internal fun AdFlag.toChildDirectedTag(): RequestConfiguration.TagForChildDirectedTreatment = when (this) {
+    AdFlag.Unspecified -> RequestConfiguration.TagForChildDirectedTreatment.TAG_FOR_CHILD_DIRECTED_TREATMENT_UNSPECIFIED
+    AdFlag.No -> RequestConfiguration.TagForChildDirectedTreatment.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE
+    AdFlag.Yes -> RequestConfiguration.TagForChildDirectedTreatment.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE
 }
 
-/** SDK 의 `MAX_AD_CONTENT_RATING_*` 문자열. 지정 안 함은 빈 문자열이다. */
-internal fun AdContentRating.toSdkRating(): String = when (this) {
-    AdContentRating.Unspecified -> ""
-    else -> name
+/** SDK 의 `RequestConfiguration.TagForUnderAgeOfConsent`. */
+internal fun AdFlag.toUnderAgeTag(): RequestConfiguration.TagForUnderAgeOfConsent = when (this) {
+    AdFlag.Unspecified -> RequestConfiguration.TagForUnderAgeOfConsent.TAG_FOR_UNDER_AGE_OF_CONSENT_UNSPECIFIED
+    AdFlag.No -> RequestConfiguration.TagForUnderAgeOfConsent.TAG_FOR_UNDER_AGE_OF_CONSENT_FALSE
+    AdFlag.Yes -> RequestConfiguration.TagForUnderAgeOfConsent.TAG_FOR_UNDER_AGE_OF_CONSENT_TRUE
+}
+
+/** SDK 의 `RequestConfiguration.MaxAdContentRating`. */
+internal fun AdContentRating.toSdkRating(): RequestConfiguration.MaxAdContentRating = when (this) {
+    AdContentRating.Unspecified -> RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_UNSPECIFIED
+    AdContentRating.G -> RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_G
+    AdContentRating.PG -> RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_PG
+    AdContentRating.T -> RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_T
+    AdContentRating.MA -> RequestConfiguration.MaxAdContentRating.MAX_AD_CONTENT_RATING_MA
 }

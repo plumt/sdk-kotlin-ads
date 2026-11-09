@@ -17,9 +17,15 @@ import androidx.compose.runtime.Composable
  */
 public class AdInterleave(
     public val interval: Int,
-    public val firstAdAfter: Int = interval,
-    public val maxAds: Int = Int.MAX_VALUE,
+    public val firstAdAfter: Int,
+    public val maxAds: Int,
 ) {
+    /** 첫 광고도 [interval] 개 뒤, 광고 수 상한 없음. */
+    public constructor(interval: Int) : this(interval, interval, Int.MAX_VALUE)
+
+    /** 광고 수 상한 없음. */
+    public constructor(interval: Int, firstAdAfter: Int) : this(interval, firstAdAfter, Int.MAX_VALUE)
+
     init {
         require(interval >= 1) { "interval 은 1 이상이어야 합니다: $interval" }
         require(firstAdAfter >= 1) { "firstAdAfter 는 1 이상이어야 합니다: $firstAdAfter" }
@@ -115,6 +121,16 @@ public class InterleavePlan internal constructor(
 /** 광고 항목의 목록 키 접두어. 콘텐츠 키가 이 접두어로 시작하는 문자열이면 충돌한다. */
 public const val AD_ITEM_KEY_PREFIX: String = "net.plumt.ads.slot:"
 
+/** [itemsWithAds] 를 콘텐츠 형식 구분 없이 부른다. */
+public fun <T> LazyListScope.itemsWithAds(
+    items: List<T>,
+    interleave: AdInterleave,
+    adsEnabled: Boolean,
+    key: (item: T) -> Any,
+    adContent: @Composable LazyItemScope.(slot: Int) -> Unit,
+    itemContent: @Composable LazyItemScope.(item: T) -> Unit,
+): Unit = itemsWithAds(items, interleave, adsEnabled, key, { null }, adContent, itemContent)
+
 /**
  * [items] 사이에 광고를 끼워 넣는다. 콘텐츠 키는 [key], 광고 키는 슬롯 번호 기반 문자열이라
  * 항목이 추가·삭제돼도 스크롤 위치와 상태가 안정적으로 유지된다.
@@ -128,7 +144,7 @@ public fun <T> LazyListScope.itemsWithAds(
     interleave: AdInterleave,
     adsEnabled: Boolean,
     key: (item: T) -> Any,
-    contentType: (item: T) -> Any? = { null },
+    contentType: (item: T) -> Any?,
     adContent: @Composable LazyItemScope.(slot: Int) -> Unit,
     itemContent: @Composable LazyItemScope.(item: T) -> Unit,
 ) {

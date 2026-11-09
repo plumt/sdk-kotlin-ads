@@ -33,7 +33,7 @@ class SlotFailureTest {
 
     @Test fun adAlwaysWins() {
         for (state in listOf(AdSlotState.Idle, AdSlotState.Loading, AdSlotState.Loaded, AdSlotState.Failed(err(AdErrorReason.NoFill)))) {
-            for (f in AdSlotFailure.entries) {
+            for (f in listOf(AdSlotFailure.Collapse, AdSlotFailure.KeepSpace)) {
                 assertEquals(SlotDraw.Ad, slotDraw(true, state, f, hasPlaceholder = false))
                 assertEquals(SlotDraw.Ad, slotDraw(true, state, f, hasPlaceholder = true))
             }
@@ -108,7 +108,7 @@ class SlotFailureTest {
 
     // ---- 풀 루프 ----
 
-    private fun err(reason: AdErrorReason) = AdsException(AdsErrorKind.Load, 0, "x", reason = reason)
+    private fun err(reason: AdErrorReason) = AdsException(AdsErrorKind.Load, 0, "x", null, reason)
 
     private class Handle(val id: String) : NativeAdHandle {
         var destroyed = 0
@@ -132,7 +132,7 @@ class SlotFailureTest {
         var calls = 0
         val produced = mutableListOf<Handle>()
         val job = launch {
-            pool.runLoop(listOf("a"), "p", events, PreloadPolicy(), 1_000, { MutableStateFlow(true) }, {}) { id ->
+            pool.runLoop(listOf("a"), "p", events, PreloadPolicy.Default, 1_000, { MutableStateFlow(true) }, {}) { id ->
                 calls++
                 listOf(Handle(id), Handle(id)).also { produced += it }
             }
@@ -158,7 +158,7 @@ class SlotFailureTest {
         val pool = NativeAdPool(1)
         val asked = mutableListOf<String>()
         val job = launch {
-            pool.runLoop(listOf("a", "b"), "p", AdEventListener.None, PreloadPolicy(), 10_000, { MutableStateFlow(true) }, {}) { id ->
+            pool.runLoop(listOf("a", "b"), "p", AdEventListener.None, PreloadPolicy.Default, 10_000, { MutableStateFlow(true) }, {}) { id ->
                 asked += id
                 if (id == "a") throw err(AdErrorReason.NoFill)
                 listOf(Handle(id))
@@ -177,7 +177,7 @@ class SlotFailureTest {
         var calls = 0
         val job = launch {
             pool.runLoop(
-                listOf("a"), "p", AdEventListener.None, PreloadPolicy(noFillBackoffMillis = 60_000, retryBackoffMillis = 1), 10_000,
+                listOf("a"), "p", AdEventListener.None, PreloadPolicy.builder().noFillBackoffMillis(60_000).retryBackoffMillis(1).build(), 10_000,
                 { MutableStateFlow(true) }, { failures += it },
             ) {
                 calls++
@@ -201,7 +201,7 @@ class SlotFailureTest {
         val online = MutableStateFlow(false)
         var calls = 0
         val job = launch {
-            pool.runLoop(listOf("a"), "p", AdEventListener.None, PreloadPolicy(), 10_000, { online }, {}) {
+            pool.runLoop(listOf("a"), "p", AdEventListener.None, PreloadPolicy.Default, 10_000, { online }, {}) {
                 calls++
                 if (calls == 1) throw err(AdErrorReason.Network)
                 listOf(Handle("a"))
@@ -220,7 +220,7 @@ class SlotFailureTest {
         val pool = NativeAdPool(1)
         val failures = mutableListOf<AdsException>()
         val job = launch {
-            pool.runLoop(listOf("a", "b"), "p", AdEventListener.None, PreloadPolicy(maxRetries = 0), 10_000, { MutableStateFlow(true) }, { failures += it }) { id ->
+            pool.runLoop(listOf("a", "b"), "p", AdEventListener.None, PreloadPolicy.builder().maxRetries(0).build(), 10_000, { MutableStateFlow(true) }, { failures += it }) { id ->
                 if (id == "a") throw IllegalStateException("boom")
                 emptyList()
             }
@@ -233,7 +233,7 @@ class SlotFailureTest {
 
     @Test fun poolWithoutIdsDoesNothing() = runTest {
         val pool = NativeAdPool(1)
-        pool.runLoop(emptyList(), "p", AdEventListener.None, PreloadPolicy(), 1, { MutableStateFlow(true) }, {}) { error("호출 안 됨") }
+        pool.runLoop(emptyList(), "p", AdEventListener.None, PreloadPolicy.Default, 1, { MutableStateFlow(true) }, {}) { error("호출 안 됨") }
         assertEquals(AdSlotState.Idle, pool.state)
     }
 
@@ -241,7 +241,7 @@ class SlotFailureTest {
         val pool = NativeAdPool(1)
         val gate = CompletableDeferred<Unit>()
         val job = launch {
-            pool.runLoop(listOf("a"), "p", AdEventListener.None, PreloadPolicy(), 10_000, { MutableStateFlow(true) }, {}) {
+            pool.runLoop(listOf("a"), "p", AdEventListener.None, PreloadPolicy.Default, 10_000, { MutableStateFlow(true) }, {}) {
                 gate.await(); listOf(Handle("a"))
             }
         }

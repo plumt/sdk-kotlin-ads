@@ -7,15 +7,14 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.RatingBar
 import android.widget.TextView
-import com.google.android.gms.ads.AdListener
-import com.google.android.gms.ads.AdLoader
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.VideoOptions
-import com.google.android.gms.ads.nativead.MediaView
-import com.google.android.gms.ads.nativead.NativeAd
-import com.google.android.gms.ads.nativead.NativeAdOptions
-import com.google.android.gms.ads.nativead.NativeAdView
+import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
+import com.google.android.libraries.ads.mobile.sdk.common.VideoOptions
+import com.google.android.libraries.ads.mobile.sdk.nativead.MediaView
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAd
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdLoader
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdLoaderCallback
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdRequest
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdView
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import net.plumt.ads.AdsErrorKind
@@ -30,8 +29,8 @@ internal object MobileAdsNativeProvider : NativeAdProvider {
         require(count in 1..MAX_COUNT) { "count 는 1..$MAX_COUNT 이어야 합니다: $count" }
         return suspendCancellableCoroutine { cont ->
             val gate = NativeLoadGate<NativeAd>(count)
-            var loader: AdLoader? = null
 
+            // Next-Gen SDK 는 콜백을 백그라운드 스레드(광고마다 다를 수 있다)에서 부른다. 판단은 메인 스레드에서 한 줄로 한다
             fun settle(outcome: NativeLoadGate.Outcome<NativeAd>) {
                 when (outcome) {
                     NativeLoadGate.Outcome.Pending -> Unit
@@ -50,24 +49,25 @@ internal object MobileAdsNativeProvider : NativeAdProvider {
                 }
             }
 
-            loader = AdLoader.Builder(context.applicationContext, adUnitId)
-                .forNativeAd { ad ->
-                    if (!cont.isActive) ad.destroy() else settle(gate.onAd(ad, loader?.isLoading == true))
+            val callback = object : NativeAdLoaderCallback {
+                override fun onNativeAdLoaded(nativeAd: NativeAd) = onMainThread {
+                    if (!cont.isActive) nativeAd.destroy() else settle(gate.onAd(nativeAd, stillLoading = true))
                 }
-                .withNativeAdOptions(
-                    NativeAdOptions.Builder()
-                        .setVideoOptions(VideoOptions.Builder().setStartMuted(true).build())
-                        .build()
-                )
-                .withAdListener(object : AdListener() {
-                    override fun onAdFailedToLoad(error: LoadAdError) {
-                        // 실패 콜백은 이 요청의 끝이다. isLoading 이 아직 참이어도 기다리지 않는다
-                        settle(gate.onFailed(error.code, error.message))
-                    }
-                })
+
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    val code = adError.code.value
+                    val message = adError.message
+                    // 실패 콜백은 이 요청의 끝이다
+                    onMainThread { settle(gate.onFailed(code, message)) }
+                }
+
+                override fun onAdLoadingCompleted() = onMainThread { settle(gate.onCompleted()) }
+            }
+            val request = NativeAdRequest.Builder(adUnitId, listOf(NativeAd.NativeAdType.NATIVE))
+                .setVideoOptions(VideoOptions.Builder().setStartMuted(true).build())
                 .build()
-            cont.invokeOnCancellation { gate.pending.forEach { it.destroy() } }
-            loader.loadAds(AdRequest.Builder().build(), count)
+            cont.invokeOnCancellation { onMainThread { gate.pending.forEach { it.destroy() } } }
+            if (count == 1) NativeAdLoader.load(request, callback) else NativeAdLoader.load(request, count, callback)
         }
     }
 
@@ -92,13 +92,13 @@ private class MobileAdsNativeHandle(private val ad: NativeAd) : NativeAdHandle {
         store = ad.store,
         starRating = ad.starRating,
         icon = ad.icon?.drawable,
-        hasVideo = ad.mediaContent?.hasVideoContent() == true,
+        hasVideo = ad.mediaContent?.hasVideoContent == true,
     )
 
     override fun bind(container: ViewGroup, views: NativeAdViews): Boolean {
         val media = views.media
         require(media == null || media is MediaView) {
-            "media 뷰는 MediaView 여야 합니다: ${media?.javaClass?.name}"
+            "media 뷰는 Next-Gen MediaView(createMediaView 로 만든 뷰)여야 합니다: ${media?.javaClass?.name}"
         }
         if (!canBindNative(assets.hasVideo, media != null)) return false
         // 다시 묶으면 이전 래퍼를 놓는다(목록 스크롤에서 뷰가 쌓이지 않게)
@@ -120,12 +120,11 @@ private class MobileAdsNativeHandle(private val ad: NativeAd) : NativeAdHandle {
         adView.storeView = views.store
         adView.starRatingView = views.starRating
         adView.iconView = views.icon
-        (media as MediaView?)?.apply {
-            setImageScaleType(ImageView.ScaleType.CENTER_CROP)
+        val mediaView = (media as MediaView?)?.apply {
+            imageScaleType = ImageView.ScaleType.CENTER_CROP
             // 미디어 자산이 없는 광고면 빈 미디어 자리를 남기지 않는다
             visibility = if (ad.mediaContent == null) View.GONE else View.VISIBLE
         }
-        adView.mediaView = media
         (views.headline as? TextView)?.text = ad.headline
         (views.body as? TextView)?.apply { text = ad.body; visibility = visibleIf(ad.body) }
         (views.callToAction as? TextView)?.apply { text = ad.callToAction; visibility = visibleIf(ad.callToAction) }
@@ -141,7 +140,8 @@ private class MobileAdsNativeHandle(private val ad: NativeAd) : NativeAdHandle {
             setImageDrawable(ad.icon?.drawable)
             visibility = if (ad.icon == null) View.GONE else View.VISIBLE
         }
-        adView.setNativeAd(ad)
+        // Next-Gen 은 미디어 뷰를 등록 호출로 받는다. 자산 뷰를 모두 단 뒤에 부른다
+        adView.registerNativeAd(ad, mediaView)
         return true
     }
 

@@ -37,25 +37,23 @@ public interface AdFrequencyPolicy {
  * - 이 인스턴스의 표시 횟수가 [maxShows] 에 닿으면 인스턴스가 버려질 때까지 막는다(세션 상한, 저장하지 않는다)
  * - [clock] 이 뒤로 가면(기기 시계 변경) 그 시각부터 유예와 간격을 다시 센다 — 일찍 허용하지 않는다
  *
- * @param clock 시각. [store] 가 영속이면 재부팅을 넘어 비교할 수 있는 [AdClock.Wall] 이어야 한다
- * @param store 마지막 표시 시각을 남기는 곳. 기본은 메모리(프로세스가 끝나면 사라진다)
- * @param key [store] 안의 키 접두어
- * @throws IllegalArgumentException 시간이 음수이거나 [maxShows] 가 0 이하이거나 [key] 가 비었을 때
+ * 불변 설정은 [builder] 로 정한다. 인자 없는 생성자는 모든 기본값(메모리 저장소, 기기 시계)이다.
+ *
+ * @property minIntervalMillis 최소 표시 간격. 기본 [DEFAULT_MIN_INTERVAL_MILLIS]
+ * @property initialDelayMillis 시작 유예. 기본 [DEFAULT_INITIAL_DELAY_MILLIS]
+ * @property maxShows 세션 표시 상한. 기본 `Int.MAX_VALUE`
+ * @property key 저장소 안의 키 접두어. 기본 [DEFAULT_KEY]
  */
-public class IntervalFrequencyPolicy(
-    public val minIntervalMillis: Long = DEFAULT_MIN_INTERVAL_MILLIS,
-    public val initialDelayMillis: Long = DEFAULT_INITIAL_DELAY_MILLIS,
-    public val maxShows: Int = Int.MAX_VALUE,
-    private val clock: AdClock = AdClock.Wall,
-    private val store: AdFrequencyStore = AdFrequencyStore.inMemory(),
-    public val key: String = DEFAULT_KEY,
-) : AdFrequencyPolicy {
-    init {
-        require(minIntervalMillis >= 0) { "minIntervalMillis 는 0 이상이어야 합니다: $minIntervalMillis" }
-        require(initialDelayMillis >= 0) { "initialDelayMillis 는 0 이상이어야 합니다: $initialDelayMillis" }
-        require(maxShows > 0) { "maxShows 는 1 이상이어야 합니다: $maxShows" }
-        require(key.isNotBlank()) { "key 가 비었습니다" }
-    }
+public class IntervalFrequencyPolicy private constructor(builder: Builder) : AdFrequencyPolicy {
+    public val minIntervalMillis: Long = builder.minIntervalMillis
+    public val initialDelayMillis: Long = builder.initialDelayMillis
+    public val maxShows: Int = builder.maxShows
+    public val key: String = builder.key
+    private val clock: AdClock = builder.clock
+    private val store: AdFrequencyStore = builder.store
+
+    /** 모든 기본값. 저장소는 메모리라 프로세스가 끝나면 기록이 사라진다. */
+    public constructor() : this(Builder())
 
     private val lastShownKey = "$key.last_shown_at"
     private var startedAt = clock.nowMillis()
@@ -86,6 +84,43 @@ public class IntervalFrequencyPolicy(
         shows++
     }
 
+    /** [IntervalFrequencyPolicy] 를 만든다. 스레드 안전하지 않다. */
+    public class Builder internal constructor() {
+        internal var minIntervalMillis: Long = DEFAULT_MIN_INTERVAL_MILLIS
+        internal var initialDelayMillis: Long = DEFAULT_INITIAL_DELAY_MILLIS
+        internal var maxShows: Int = Int.MAX_VALUE
+        internal var clock: AdClock = AdClock.Wall
+        internal var store: AdFrequencyStore = InMemoryFrequencyStore()
+        internal var key: String = DEFAULT_KEY
+
+        /** 마지막 표시 뒤 이 시간이 지나기 전에는 막는다. */
+        public fun minIntervalMillis(value: Long): Builder = apply { minIntervalMillis = value }
+
+        /** 만든 시점부터 이 시간이 지나기 전에는 막는다. */
+        public fun initialDelayMillis(value: Long): Builder = apply { initialDelayMillis = value }
+
+        /** 이 인스턴스의 표시 횟수 상한. */
+        public fun maxShows(value: Int): Builder = apply { maxShows = value }
+
+        /** 시각. [store] 가 영속이면 재부팅을 넘어 비교할 수 있는 [AdClock.Wall](기본)이어야 한다. */
+        public fun clock(clock: AdClock): Builder = apply { this.clock = clock }
+
+        /** 마지막 표시 시각을 남기는 곳. 기본은 메모리(프로세스가 끝나면 사라진다). */
+        public fun store(store: AdFrequencyStore): Builder = apply { this.store = store }
+
+        /** [store] 안의 키 접두어. */
+        public fun key(key: String): Builder = apply { this.key = key }
+
+        /** @throws IllegalArgumentException 시간이 음수이거나 [maxShows] 가 0 이하이거나 [key] 가 비었을 때 */
+        public fun build(): IntervalFrequencyPolicy {
+            require(minIntervalMillis >= 0) { "minIntervalMillis 는 0 이상이어야 합니다: $minIntervalMillis" }
+            require(initialDelayMillis >= 0) { "initialDelayMillis 는 0 이상이어야 합니다: $initialDelayMillis" }
+            require(maxShows > 0) { "maxShows 는 1 이상이어야 합니다: $maxShows" }
+            require(key.isNotBlank()) { "key 가 비었습니다" }
+            return IntervalFrequencyPolicy(this)
+        }
+    }
+
     public companion object {
         /** 기본 최소 간격: 2분. */
         public const val DEFAULT_MIN_INTERVAL_MILLIS: Long = 120_000L
@@ -95,6 +130,10 @@ public class IntervalFrequencyPolicy(
 
         /** 기본 저장소 키 접두어. */
         public const val DEFAULT_KEY: String = "interval"
+
+        /** 빌더. */
+        @JvmStatic
+        public fun builder(): Builder = Builder()
     }
 }
 
@@ -108,8 +147,11 @@ public class IntervalFrequencyPolicy(
 public class LaunchCountFrequencyPolicy(
     public val skipFirstLaunches: Int,
     private val store: AdFrequencyStore,
-    public val key: String = DEFAULT_KEY,
+    public val key: String,
 ) : AdFrequencyPolicy {
+    /** 키를 [DEFAULT_KEY] 로 둔다. */
+    public constructor(skipFirstLaunches: Int, store: AdFrequencyStore) : this(skipFirstLaunches, store, DEFAULT_KEY)
+
     init {
         require(skipFirstLaunches >= 0) { "skipFirstLaunches 는 0 이상이어야 합니다: $skipFirstLaunches" }
         require(key.isNotBlank()) { "key 가 비었습니다" }

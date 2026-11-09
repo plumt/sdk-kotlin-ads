@@ -64,7 +64,7 @@ class UsableNetworksTest {
 /** 시스템 연결 관리자 콜백 순서 그대로 — onLost 시점에 activeNetwork 가 아직 잃은 망이어도 false 가 와야 한다. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [23, 33, 35])
+@Config(sdk = [24, 33, 35])
 class SystemConnectivityTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val cm = context.getSystemService(ConnectivityManager::class.java)

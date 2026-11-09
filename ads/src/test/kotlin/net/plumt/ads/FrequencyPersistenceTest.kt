@@ -15,7 +15,7 @@ import java.util.Random
 
 /** 빈도 기록 저장소와, 프로세스 재시작(저장소·정책 재생성)을 넘는 빈도 제한. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [23, 28, 35])
+@Config(sdk = [24, 28, 35])
 class FrequencyPersistenceTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val clock = FakeClock(1_700_000_000_000)
@@ -50,14 +50,14 @@ class FrequencyPersistenceTest {
     }
 
     @Test fun intervalSurvivesProcessRestart() {
-        val p1 = IntervalFrequencyPolicy(minIntervalMillis = 120_000, initialDelayMillis = 30_000, clock = clock, store = prefs())
+        val p1 = interval(minIntervalMillis = 120_000, initialDelayMillis = 30_000, clock = clock, store = prefs())
         clock.advance(30_000)
         assertTrue(p1.canShow("a"))
         p1.onShown("a")
 
         // 프로세스가 죽고 다시 떴다: 저장소·정책을 새로 만든다
         clock.advance(40_000)
-        val p2 = IntervalFrequencyPolicy(minIntervalMillis = 120_000, initialDelayMillis = 30_000, clock = clock, store = prefs())
+        val p2 = interval(minIntervalMillis = 120_000, initialDelayMillis = 30_000, clock = clock, store = prefs())
         clock.advance(30_000) // 시작 유예는 끝났지만 마지막 표시 뒤 70초
         assertFalse(p2.canShow("a"))
         clock.advance(49_999)
@@ -69,25 +69,25 @@ class FrequencyPersistenceTest {
 
     @Test fun keysSeparatePolicies() {
         val store = AdFrequencyStore.inMemory()
-        val a = IntervalFrequencyPolicy(100, 0, clock = clock, store = store, key = "a")
-        val b = IntervalFrequencyPolicy(100, 0, clock = clock, store = store, key = "b")
+        val a = interval(100, 0, clock = clock, store = store, key = "a")
+        val b = interval(100, 0, clock = clock, store = store, key = "b")
         a.onShown("x")
         assertFalse(a.canShow("x"))
         assertTrue(b.canShow("x"))
         assertEquals(clock.now, store.getLong("a.last_shown_at"))
-        assertEquals(IntervalFrequencyPolicy.DEFAULT_KEY, IntervalFrequencyPolicy(clock = clock).key)
+        assertEquals(IntervalFrequencyPolicy.DEFAULT_KEY, interval(clock = clock).key)
     }
 
     @Test fun intervalRejectsBlankKey() {
         assertEquals(
             "key 가 비었습니다",
-            assertThrows(IllegalArgumentException::class.java) { IntervalFrequencyPolicy(clock = clock, key = "") }.message,
+            assertThrows(IllegalArgumentException::class.java) { interval(clock = clock, key = "") }.message,
         )
     }
 
     @Test fun clockMovedBackRestartsCountingInsteadOfBlockingForever() {
         val store = AdFrequencyStore.inMemory()
-        val p = IntervalFrequencyPolicy(minIntervalMillis = 100, initialDelayMillis = 50, clock = clock, store = store)
+        val p = interval(minIntervalMillis = 100, initialDelayMillis = 50, clock = clock, store = store)
         clock.advance(50)
         p.onShown("a")
         clock.now -= 86_400_000 // 하루 뒤로
@@ -99,14 +99,14 @@ class FrequencyPersistenceTest {
     }
 
     @Test fun clockMovedBackWithZeroIntervalAllows() {
-        val p = IntervalFrequencyPolicy(minIntervalMillis = 0, initialDelayMillis = 0, clock = clock)
+        val p = interval(minIntervalMillis = 0, initialDelayMillis = 0, clock = clock)
         p.onShown("a")
         clock.now -= 10
         assertTrue(p.canShow("a"))
     }
 
     @Test fun clockMovedBackDuringInitialDelayRestartsDelay() {
-        val p = IntervalFrequencyPolicy(minIntervalMillis = 0, initialDelayMillis = 100, clock = clock)
+        val p = interval(minIntervalMillis = 0, initialDelayMillis = 100, clock = clock)
         clock.now -= 1_000_000
         assertFalse(p.canShow("a"))
         clock.advance(100)
@@ -116,7 +116,7 @@ class FrequencyPersistenceTest {
     @Test fun fuzzAcrossRestartsNeverViolatesInterval() {
         val rnd = Random(7)
         val store = AdFrequencyStore.inMemory()
-        fun newPolicy() = IntervalFrequencyPolicy(minIntervalMillis = 1_000, initialDelayMillis = 200, clock = clock, store = store)
+        fun newPolicy() = interval(minIntervalMillis = 1_000, initialDelayMillis = 200, clock = clock, store = store)
         var p = newPolicy()
         var lastShown: Long? = null
         repeat(5_000) {

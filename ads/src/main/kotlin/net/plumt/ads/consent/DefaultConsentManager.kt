@@ -3,15 +3,20 @@ package net.plumt.ads.consent
 import android.app.Activity
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
+import net.plumt.ads.AdsCallHandle
 import net.plumt.ads.AdsException
+import net.plumt.ads.defaultScope
+import net.plumt.ads.launchCallback
 
 internal class DefaultConsentManager(
     private val gateway: ConsentGateway,
+    /** 콜백 형태 호출이 도는 곳. 클라이언트의 범위를 넘겨 [net.plumt.ads.AdsClient.close] 때 함께 멈춘다. */
+    private val callbackScope: CoroutineScope = defaultScope(),
 ) : ConsentManager {
 
     private val state = MutableStateFlow(gateway.current())
@@ -25,41 +30,40 @@ internal class DefaultConsentManager(
      */
     fun refreshFromStorage() = publish()
 
-    override suspend fun gather(activity: Activity) {
-        gatherIfIdle(activity)
-    }
-
-    /** [gather] 와 같다. 다른 호출이 진행 중이라 아무것도 하지 않았으면 false. */
-    suspend fun gatherIfIdle(activity: Activity): Boolean {
-        if (!gathering.compareAndSet(false, true)) return false
+    override suspend fun gather(activity: Activity): ConsentFormResult {
+        if (!gathering.compareAndSet(false, true)) return ConsentFormResult.AlreadyInProgress
         try {
             // 갱신을 요청한 직후 한 번 내보낸다 — 지난 실행의 동의가 허용이면 응답 전에 초기화가 시작된다
-            await { done -> gateway.gather(activity, onUpdateRequested = ::publish, onDone = done) }
+            return await { done -> gateway.gather(activity, onUpdateRequested = ::publish, onDone = done) }
         } finally {
             gathering.set(false)
             publish()
         }
-        return true
     }
 
-    override suspend fun showPrivacyOptions(activity: Activity) {
+    override fun gather(activity: Activity, onResult: (ConsentFormResult) -> Unit): AdsCallHandle =
+        callbackScope.launchCallback({ gather(activity) }, onResult)
+
+    override suspend fun showPrivacyOptions(activity: Activity): ConsentFormResult {
         try {
-            await { done -> gateway.showPrivacyOptions(activity, done) }
+            return await { done -> gateway.showPrivacyOptions(activity, done) }
         } finally {
             publish()
         }
     }
+
+    override fun showPrivacyOptions(activity: Activity, onResult: (ConsentFormResult) -> Unit): AdsCallHandle =
+        callbackScope.launchCallback({ showPrivacyOptions(activity) }, onResult)
 
     private fun publish() {
         state.value = gateway.current()
     }
 
-    private suspend fun await(start: ((AdsException?) -> Unit) -> Unit) {
+    private suspend fun await(start: ((AdsException?) -> Unit) -> Unit): ConsentFormResult =
         suspendCancellableCoroutine { cont ->
             start { error ->
                 if (!cont.isActive) return@start
-                if (error == null) cont.resume(Unit) else cont.resumeWithException(error)
+                cont.resume(if (error == null) ConsentFormResult.Completed else ConsentFormResult.Failed(error))
             }
         }
-    }
 }

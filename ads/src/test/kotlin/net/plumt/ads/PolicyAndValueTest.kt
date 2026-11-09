@@ -13,7 +13,7 @@ class IntervalFrequencyPolicyTest {
     private val clock = FakeClock(1_000)
 
     private fun policy(min: Long = 100, delay: Long = 50, max: Int = Int.MAX_VALUE) =
-        IntervalFrequencyPolicy(min, delay, max, clock)
+        interval(min, delay, max, clock)
 
     @Test fun blocksDuringInitialDelay() {
         val p = policy()
@@ -66,15 +66,15 @@ class IntervalFrequencyPolicyTest {
     @Test fun rejectsBadArguments() {
         assertEquals(
             "minIntervalMillis 는 0 이상이어야 합니다: -1",
-            assertThrows(IllegalArgumentException::class.java) { IntervalFrequencyPolicy(-1, 0, 1, clock) }.message,
+            assertThrows(IllegalArgumentException::class.java) { interval(-1, 0, 1, clock) }.message,
         )
         assertEquals(
             "initialDelayMillis 는 0 이상이어야 합니다: -5",
-            assertThrows(IllegalArgumentException::class.java) { IntervalFrequencyPolicy(0, -5, 1, clock) }.message,
+            assertThrows(IllegalArgumentException::class.java) { interval(0, -5, 1, clock) }.message,
         )
         assertEquals(
             "maxShows 는 1 이상이어야 합니다: 0",
-            assertThrows(IllegalArgumentException::class.java) { IntervalFrequencyPolicy(0, 0, 0, clock) }.message,
+            assertThrows(IllegalArgumentException::class.java) { interval(0, 0, 0, clock) }.message,
         )
     }
 
@@ -148,12 +148,12 @@ class ValueTypesTest {
     }
 
     @Test fun configRejectsBlankTestDevice() {
-        val e = assertThrows(IllegalArgumentException::class.java) { AdsConfig(testDeviceIds = listOf("ABC", " ")) }
+        val e = assertThrows(IllegalArgumentException::class.java) { config(testDeviceIds = listOf("ABC", " ")) }
         assertEquals("testDeviceIds 에 빈 문자열이 있습니다: [ABC,  ]", e.message)
     }
 
     @Test fun configAcceptsUnicodeAndLongIds() {
-        val c = AdsConfig(testDeviceIds = listOf("기기-1", "x".repeat(10_000)))
+        val c = config(testDeviceIds = listOf("기기-1", "x".repeat(10_000)))
         assertEquals(2, c.testDeviceIds.size)
         assertEquals(ConsentDebugGeography.Disabled, c.consentDebugGeography)
     }
@@ -172,17 +172,17 @@ class ValueTypesTest {
     @Test fun preloadPolicyValidation() {
         assertEquals(
             "maxRetries 는 0 이상이어야 합니다: -1",
-            assertThrows(IllegalArgumentException::class.java) { PreloadPolicy(maxRetries = -1) }.message,
+            assertThrows(IllegalArgumentException::class.java) { preload(maxRetries = -1) }.message,
         )
         assertEquals(
             "retryBackoffMillis 는 0 이상이어야 합니다: -1",
-            assertThrows(IllegalArgumentException::class.java) { PreloadPolicy(retryBackoffMillis = -1) }.message,
+            assertThrows(IllegalArgumentException::class.java) { preload(retryBackoffMillis = -1) }.message,
         )
         assertEquals(
             "expireAfterMillis 는 1 이상이어야 합니다: 0",
-            assertThrows(IllegalArgumentException::class.java) { PreloadPolicy(expireAfterMillis = 0) }.message,
+            assertThrows(IllegalArgumentException::class.java) { preload(expireAfterMillis = 0) }.message,
         )
-        PreloadPolicy(maxRetries = 0, retryBackoffMillis = 0, expireAfterMillis = 1)
+        preload(maxRetries = 0, retryBackoffMillis = 0, expireAfterMillis = 1)
     }
 
     @Test fun eventListenerCombineCallsInOrder() {
@@ -197,12 +197,12 @@ class ValueTypesTest {
     @Test fun eventsExposeFormatAndPlacement() {
         val events = listOf<AdEvent>(
             AdEvent.Requested(AdFormat.Native, "p"), AdEvent.Loaded(AdFormat.Native, "p"),
-            AdEvent.LoadFailed(AdFormat.Native, "p", 1, "m"), AdEvent.Impression(AdFormat.Native, "p"),
+            AdEvent.LoadFailed(AdFormat.Native, "p", 1, "m", AdErrorReason.Unknown), AdEvent.Impression(AdFormat.Native, "p"),
             AdEvent.Clicked(AdFormat.Native, "p"), AdEvent.Shown(AdFormat.Native, "p"),
-            AdEvent.ShowFailed(AdFormat.Native, "p", 1, "m"), AdEvent.Dismissed(AdFormat.Native, "p"),
+            AdEvent.ShowFailed(AdFormat.Native, "p", 1, "m", AdErrorReason.Unknown), AdEvent.Dismissed(AdFormat.Native, "p"),
             AdEvent.RewardEarned(AdFormat.Native, "p", "coin", 5), AdEvent.Suppressed(AdFormat.Native, "p", SuppressReason.Unavailable),
         )
         events.forEach { assertEquals(AdFormat.Native, it.format); assertEquals("p", it.placement); assertNotNull(it.toString()) }
-        assertEquals(AdEvent.LoadFailed(AdFormat.Banner, "q", 2, "x"), AdEvent.LoadFailed(AdFormat.Banner, "q", 2, "x"))
+        assertEquals(AdEvent.LoadFailed(AdFormat.Banner, "q", 2, "x", AdErrorReason.Unknown), AdEvent.LoadFailed(AdFormat.Banner, "q", 2, "x", AdErrorReason.Unknown))
     }
 }

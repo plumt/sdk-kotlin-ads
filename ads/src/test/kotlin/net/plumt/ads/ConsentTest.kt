@@ -7,6 +7,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import net.plumt.ads.consent.ConsentFormResult
 import net.plumt.ads.consent.ConsentSnapshot
 import net.plumt.ads.consent.ConsentStatus
 import net.plumt.ads.consent.DefaultConsentManager
@@ -23,15 +24,15 @@ import org.robolectric.annotation.Config
 
 class ConsentStatusMappingTest {
     @Test fun mapsEveryKnownUmpValue() {
-        assertEquals(ConsentStatus.Unknown, ConsentStatus.fromUmp(0))
-        assertEquals(ConsentStatus.NotRequired, ConsentStatus.fromUmp(1))
-        assertEquals(ConsentStatus.Required, ConsentStatus.fromUmp(2))
-        assertEquals(ConsentStatus.Obtained, ConsentStatus.fromUmp(3))
+        assertEquals(ConsentStatus.Unknown, net.plumt.ads.consent.consentStatusFromUmp(0))
+        assertEquals(ConsentStatus.NotRequired, net.plumt.ads.consent.consentStatusFromUmp(1))
+        assertEquals(ConsentStatus.Required, net.plumt.ads.consent.consentStatusFromUmp(2))
+        assertEquals(ConsentStatus.Obtained, net.plumt.ads.consent.consentStatusFromUmp(3))
     }
 
     @Test fun unknownValuesAreUnknown() {
         listOf(-1, 4, 99, Int.MAX_VALUE, Int.MIN_VALUE).forEach {
-            assertEquals("값 $it", ConsentStatus.Unknown, ConsentStatus.fromUmp(it))
+            assertEquals("값 $it", ConsentStatus.Unknown, net.plumt.ads.consent.consentStatusFromUmp(it))
         }
     }
 
@@ -60,17 +61,16 @@ class DefaultConsentManagerTest {
         assertEquals(1, gw.gatherCalls)
     }
 
-    @Test fun gatherFailureThrowsSameExceptionAndStillRefreshes() = runTest {
+    @Test fun gatherFailureReturnsSameExceptionAndStillRefreshes() = runTest {
         val gw = FakeGateway(DENY)
         val err = AdsException(AdsErrorKind.Consent, 2, "네트워크")
         gw.onGather = { done -> gw.snapshot = ALLOW; done(err) }
         val m = DefaultConsentManager(gw)
-        try {
-            m.gather(activity)
-            fail("예외가 와야 한다")
-        } catch (e: AdsException) {
-            assertSame(err, e)
-        }
+        val result = m.gather(activity)
+        assertSame(err, (result as ConsentFormResult.Failed).error)
+        assertEquals(ConsentFormResult.Failed(err), result)
+        assertEquals(result.hashCode(), ConsentFormResult.Failed(err).hashCode())
+        assertTrue(result.toString().contains("네트워크"))
         assertEquals("지난 실행 동의가 허용이면 실패해도 허용", ALLOW, m.snapshot.value)
     }
 
@@ -117,16 +117,11 @@ class DefaultConsentManagerTest {
         val gw = FakeGateway(ALLOW)
         val m = DefaultConsentManager(gw)
         gw.onPrivacy = { done -> gw.snapshot = DENY; done(null) }
-        m.showPrivacyOptions(activity)
+        assertEquals(ConsentFormResult.Completed, m.showPrivacyOptions(activity))
         assertEquals(DENY, m.snapshot.value)
         val err = AdsException(AdsErrorKind.Consent, 7, "폼")
         gw.onPrivacy = { done -> done(err) }
-        try {
-            m.showPrivacyOptions(activity)
-            fail()
-        } catch (e: AdsException) {
-            assertSame(err, e)
-        }
+        assertSame(err, (m.showPrivacyOptions(activity) as ConsentFormResult.Failed).error)
         assertEquals(2, gw.privacyCalls)
     }
 

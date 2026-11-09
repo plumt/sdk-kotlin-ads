@@ -36,7 +36,7 @@ class AdsClientTest {
 
     private fun TestScope.client(
         source: AdsEnabledSource = enabled,
-        config: AdsConfig = AdsConfig(),
+        config: AdsConfig = config(),
     ) = DefaultAdsClient(
         context, config, source, events, network, gateway, FakeClock(),
         CoroutineScope(UnconfinedTestDispatcher(testScheduler) + job),
@@ -53,7 +53,7 @@ class AdsClientTest {
         assertEquals(1, network.initCalls)
         assertSame(network, c.network)
         assertSame(events, c.events)
-        assertEquals(AdsConfig(), c.config)
+        assertEquals(config(), c.config)
     }
 
     @Test fun disabledSwitchNeverInitializesOrAsksConsent() = runTest {
@@ -123,12 +123,8 @@ class AdsClientTest {
         val err = AdsException(AdsErrorKind.Consent, 1, "폼")
         gateway.onGather = { done -> done(err) }
         val c = client()
-        try {
-            c.gatherConsent(activity)
-            org.junit.Assert.fail()
-        } catch (e: AdsException) {
-            assertSame(err, e)
-        }
+        val result = c.gatherConsent(activity)
+        assertSame(err, (result as ConsentGatherResult.Failed).error)
         assertFalse(c.adsAvailable.value)
     }
 
@@ -205,14 +201,14 @@ class AdsClientTest {
 
     @Test fun createDoesNotTouchNetwork() {
         // 공개 팩토리는 UMP 게이트웨이를 만들 뿐 SDK 를 부르지 않는다(UMP 는 컨텍스트만 받는다)
-        val c = AdsClient.create(context, AdsConfig(), AdsEnabledSource.Always, events, network)
+        val c = AdsClient.create(context, AdsConfig.builder().enabledSource(AdsEnabledSource.Always).events(events).network(network).build())
         c.close()
     }
 
     @Test fun createWithAllDefaultsStartsDisabledUntilConsent() {
         val c = AdsClient.create(context)
         assertFalse(c.adsAvailable.value) // 동의 전에는 광고를 요청하지 않는다
-        assertEquals(AdsConfig(), c.config)
+        assertEquals(config(), c.config)
         c.close()
     }
 }

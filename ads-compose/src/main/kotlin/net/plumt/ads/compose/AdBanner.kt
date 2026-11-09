@@ -63,7 +63,7 @@ public fun AdBanner(
     reserveSpace: Boolean = true,
     failure: AdSlotFailure = AdSlotFailure.KeepSpace,
     fallbacks: List<AdUnit> = emptyList(),
-    retry: PreloadPolicy = PreloadPolicy(),
+    retry: PreloadPolicy = PreloadPolicy.Default,
     onLoadFailed: (AdsException) -> Unit = {},
 ) {
     unit.requireFormat(AdFormat.Banner)
@@ -132,19 +132,19 @@ private fun BannerSlot(
                             events.onEvent(AdEvent.Loaded(AdFormat.Banner, placement))
                         }
 
-                        override fun onLoadFailed(raw: AdsException) {
+                        override fun onLoadFailed(error: AdsException) {
                             slot.reassert()
                             // 오프라인이면 SDK 가 내부 오류로 알려도 네트워크 실패다 — 재시도가 연결 복구를 기다린다
-                            val error = raw.classifyOffline(slot.online != false)
+                            val failure = error.classifyOffline(slot.online != false)
                             events.onEvent(
-                                AdEvent.LoadFailed(AdFormat.Banner, placement, error.code, error.message.orEmpty(), error.reason),
+                                AdEvent.LoadFailed(AdFormat.Banner, placement, failure.code, failure.message.orEmpty(), failure.reason),
                             )
-                            failedCallback(error)
-                            when (val next = bannerNext(index, ids.size, loaded, error.reason == AdErrorReason.Network)) {
+                            failedCallback(failure)
+                            when (val next = bannerNext(index, ids.size, loaded, failure.reason == AdErrorReason.Network)) {
                                 is BannerNext.Fallback -> index = next.index
                                 BannerNext.Retry -> {
-                                    lastError = error
-                                    retryError = error
+                                    lastError = failure
+                                    retryError = failure
                                     failures++
                                 }
                                 BannerNext.Nothing -> Unit

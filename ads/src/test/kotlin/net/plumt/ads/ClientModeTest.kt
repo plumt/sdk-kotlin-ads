@@ -27,7 +27,7 @@ import org.robolectric.annotation.Config
 /** 개발·운영 모드, 단위 등록부, 설정 오류 신호, 단위별 빈도, 대체 단위, 첫 화면 동의. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [23, 33, 35])
+@Config(sdk = [24, 33, 35])
 class ClientModeTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val activity: Activity = Robolectric.buildActivity(Activity::class.java).get()
@@ -38,7 +38,7 @@ class ClientModeTest {
     private val job = Job()
 
     private fun TestScope.client(
-        config: AdsConfig = AdsConfig(),
+        config: AdsConfig = config(),
         debuggable: Boolean = true,
         units: AdUnitRegistry = AdUnitRegistry.Empty,
         source: AdsEnabledSource = AdsEnabledSource.Always,
@@ -53,12 +53,12 @@ class ClientModeTest {
     @Test fun autoModeFollowsDebuggable() = runTest {
         assertEquals(AdsMode.Development, client(debuggable = true).mode)
         assertEquals(AdsMode.Production, client(debuggable = false).mode)
-        assertEquals(AdsMode.Production, client(AdsConfig(mode = AdsMode.Production), debuggable = true).mode)
-        assertEquals(AdsMode.Development, client(AdsConfig(mode = AdsMode.Development), debuggable = false).mode)
+        assertEquals(AdsMode.Production, client(config(mode = AdsMode.Production), debuggable = true).mode)
+        assertEquals(AdsMode.Development, client(config(mode = AdsMode.Development), debuggable = false).mode)
     }
 
     @Test fun developmentAppliesTestSettingsToNetwork() = runTest {
-        val cfg = AdsConfig(mode = AdsMode.Development, testDeviceIds = listOf("dev"), consentDebugGeography = ConsentDebugGeography.Eea)
+        val cfg = config(mode = AdsMode.Development, testDeviceIds = listOf("dev"), consentDebugGeography = ConsentDebugGeography.Eea)
         val c = client(cfg)
         assertEquals(listOf("dev"), network.lastConfig!!.testDeviceIds)
         assertEquals(ConsentDebugGeography.Eea, network.lastConfig!!.consentDebugGeography)
@@ -68,7 +68,7 @@ class ClientModeTest {
     }
 
     @Test fun productionIgnoresTestSettingsAndWarns() = runTest {
-        val cfg = AdsConfig(mode = AdsMode.Production, testDeviceIds = listOf("dev"), consentDebugGeography = ConsentDebugGeography.Eea)
+        val cfg = config(mode = AdsMode.Production, testDeviceIds = listOf("dev"), consentDebugGeography = ConsentDebugGeography.Eea)
         val c = client(cfg)
         assertTrue(network.lastConfig!!.testDeviceIds.isEmpty())
         assertEquals(ConsentDebugGeography.Disabled, network.lastConfig!!.consentDebugGeography)
@@ -79,22 +79,22 @@ class ClientModeTest {
 
     @Test fun productionChecksRegistryEagerly() = runTest {
         val reg = AdUnitRegistry(AdUnit.banner("ok", "real"), AdUnit.banner("empty", ""), AdUnit.rewarded("test", TestAdIds.REWARDED))
-        val prod = client(AdsConfig(mode = AdsMode.Production), units = reg)
+        val prod = client(config(mode = AdsMode.Production), units = reg)
         assertSame(reg, prod.units)
         assertEquals(
             listOf(AdsException.CODE_PRODUCTION_ID_MISSING, AdsException.CODE_TEST_ID_IN_PRODUCTION),
             prod.configurationErrors.value.map { it.code },
         )
-        val dev = client(AdsConfig(mode = AdsMode.Development), units = reg)
+        val dev = client(config(mode = AdsMode.Development), units = reg)
         assertTrue(dev.configurationErrors.value.isEmpty())
     }
 
     @Test fun adUnitIdPicksByModeAndReportsMisconfigurationOnce() = runTest {
         val unit = AdUnit.banner("home_banner", "real")
-        assertEquals(TestAdIds.BANNER, client(AdsConfig(mode = AdsMode.Development)).adUnitId(unit))
-        assertEquals("real", client(AdsConfig(mode = AdsMode.Production)).adUnitId(unit))
+        assertEquals(TestAdIds.BANNER, client(config(mode = AdsMode.Development)).adUnitId(unit))
+        assertEquals("real", client(config(mode = AdsMode.Production)).adUnitId(unit))
 
-        val prod = client(AdsConfig(mode = AdsMode.Production))
+        val prod = client(config(mode = AdsMode.Production))
         val broken = AdUnit.banner("home_banner", "")
         assertNull(prod.adUnitId(broken, "home"))
         assertNull(prod.adUnitId(broken, "home")) // 크래시하지 않고 다시 불러도 같다
@@ -104,7 +104,7 @@ class ClientModeTest {
     }
 
     @Test fun misconfiguredControllerNeverLoadsAndSuppresses() = runTest {
-        val c = client(AdsConfig(mode = AdsMode.Production))
+        val c = client(config(mode = AdsMode.Production))
         val ctrl = c.fullScreenController(AdUnit.interstitial("level_end", TestAdIds.INTERSTITIAL), policy = AdFrequencyPolicy.Unlimited)
         assertTrue(ctrl.misconfigured)
         assertEquals("level_end", ctrl.placement)
@@ -119,7 +119,7 @@ class ClientModeTest {
     @Test fun productionUsesProductionIdForLoad() = runTest {
         val ids = mutableListOf<String>()
         val c = DefaultAdsClient(
-            context, AdsConfig(mode = AdsMode.Production), AdsEnabledSource.Always, events,
+            context, config(mode = AdsMode.Production), AdsEnabledSource.Always, events,
             object : net.plumt.ads.network.AdNetwork by network {
                 override val interstitial = net.plumt.ads.network.FullScreenAdProvider { _, id -> ids += id; FakeAd() }
             },
@@ -173,7 +173,7 @@ class ClientModeTest {
     }
 
     @Test fun perUnitFrequencyKeepsUnitsIndependent() = runTest {
-        val c = client(AdsConfig(appOpenSkipFirstLaunches = 0))
+        val c = client(config(appOpenSkipFirstLaunches = 0))
         val a = c.fullScreenController(AdUnit.appOpen("open_a", "p"), frequencyScope = FrequencyScope.PerUnit)
         val b = c.fullScreenController(AdUnit.appOpen("open_b", "p"), frequencyScope = FrequencyScope.PerUnit)
         assertEquals(ShowResult.Started, showAndDismiss(a, network.appOpenProvider))
@@ -183,7 +183,7 @@ class ClientModeTest {
     }
 
     @Test fun perFormatFrequencySharesAcrossUnits() = runTest {
-        val c = client(AdsConfig(appOpenSkipFirstLaunches = 0))
+        val c = client(config(appOpenSkipFirstLaunches = 0))
         val a = c.fullScreenController(AdUnit.appOpen("open_a", "p"))
         val b = c.fullScreenController(AdUnit.appOpen("open_b", "p"))
         assertEquals(ShowResult.Started, showAndDismiss(a, network.appOpenProvider))
@@ -194,7 +194,7 @@ class ClientModeTest {
     // ---- 대체 단위 ----
 
     @Test fun fallbackUnitFillsWhenPrimaryFails() = runTest {
-        network.rewardedProvider.enqueueError(AdsException(AdsErrorKind.Load, 3, "no fill", reason = AdErrorReason.NoFill))
+        network.rewardedProvider.enqueueError(AdsException(AdsErrorKind.Load, 3, "no fill", null, AdErrorReason.NoFill))
         val c = client()
         val primary = AdUnit.rewarded("reward_1", "p1")
         val second = AdUnit.rewarded("reward_2", "p2")
@@ -207,7 +207,7 @@ class ClientModeTest {
     }
 
     @Test fun misconfiguredPrimaryIsSkippedForValidFallback() = runTest {
-        val c = client(AdsConfig(mode = AdsMode.Production))
+        val c = client(config(mode = AdsMode.Production))
         val ctrl = c.fullScreenController(
             AdUnit.rewarded("reward_1", ""), fallbacks = listOf(AdUnit.rewarded("reward_2", "real")),
         )
@@ -228,8 +228,8 @@ class ClientModeTest {
         assertEquals("exit", p.placement)
         assertThrows(IllegalArgumentException::class.java) { c.prefetchedNativeAd(AdUnit.banner("b", "p")) }
         assertThrows(IllegalArgumentException::class.java) { c.prefetchedNativeAd(unit, " ") }
-        assertThrows(IllegalArgumentException::class.java) { c.prefetchedNativeAd(unit, ttlMillis = 0) }
-        assertThrows(IllegalArgumentException::class.java) { c.prefetchedNativeAd(unit, fallbacks = listOf(AdUnit.banner("b", "p"))) }
+        assertThrows(IllegalArgumentException::class.java) { c.prefetchedNativeAd(unit, unit.name, 0, emptyList()) }
+        assertThrows(IllegalArgumentException::class.java) { c.prefetchedNativeAd(unit, unit.name, PrefetchedNativeAd.DEFAULT_TTL_MILLIS, listOf(AdUnit.banner("b", "p"))) }
     }
 
     // ---- 첫 화면 동의 ----
@@ -237,23 +237,23 @@ class ClientModeTest {
     @Test fun gatherConsentOnFirstResumeRunsOnceWithFirstActivity() = runTest {
         val c = client()
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val results = mutableListOf<Result<ConsentGatherResult>>()
+        val results = mutableListOf<ConsentGatherResult>()
         c.gatherConsentOnFirstResume(app) { results += it }
         val controller = Robolectric.buildActivity(Activity::class.java).setup()
         Robolectric.buildActivity(Activity::class.java).setup()
         controller.pause().resume()
         assertEquals(1, gateway.gatherCalls)
-        assertEquals(listOf(Result.success(ConsentGatherResult.Completed)), results)
+        assertEquals(listOf<ConsentGatherResult>(ConsentGatherResult.Completed), results)
     }
 
     @Test fun gatherConsentOnFirstResumeReportsFailure() = runTest {
         val err = AdsException(AdsErrorKind.Consent, 1, "폼")
         gateway.onGather = { done -> done(err) }
         val c = client()
-        var result: Result<ConsentGatherResult>? = null
+        var result: ConsentGatherResult? = null
         c.gatherConsentOnFirstResume(ApplicationProvider.getApplicationContext()) { result = it }
         Robolectric.buildActivity(Activity::class.java).setup()
-        assertSame(err, result!!.exceptionOrNull())
+        assertSame(err, (result as ConsentGatherResult.Failed).error)
     }
 
     @Test fun gatherConsentOnFirstResumeSkipsFinishingActivity() = runTest {
@@ -269,7 +269,7 @@ class ClientModeTest {
 
     @Test fun publicCreateResolvesModeAndKeepsUnits() {
         val reg = AdUnitRegistry(AdUnit.banner("b", ""))
-        val c = AdsClient.create(context, AdsConfig(mode = AdsMode.Production), network = network, units = reg)
+        val c = AdsClient.create(context, AdsConfig.builder().mode(AdsMode.Production).network(network).units(reg).build())
         assertEquals(AdsMode.Production, c.mode)
         assertSame(reg, c.units)
         assertEquals(1, c.configurationErrors.value.size)

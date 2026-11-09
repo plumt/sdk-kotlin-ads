@@ -128,7 +128,7 @@ class PrefetchedNativeAdTest {
     }
 
     @Test fun failureFallsBackToNextUnitAndIsRecorded() = runTest {
-        provider.results.addLast(AdsException(AdsErrorKind.Load, 3, "no fill", reason = AdErrorReason.NoFill))
+        provider.results.addLast(AdsException(AdsErrorKind.Load, 3, "no fill", null, AdErrorReason.NoFill))
         val c = cache(chain = listOf("primary", "fallback"))
         c.prefetch()
         assertEquals(listOf("primary", "fallback"), provider.requestedIds)

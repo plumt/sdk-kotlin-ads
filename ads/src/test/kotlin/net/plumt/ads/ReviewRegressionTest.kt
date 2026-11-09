@@ -44,7 +44,7 @@ class ReviewRegressionTest {
 
     private fun TestScope.client(
         source: AdsEnabledSource = AdsEnabledSource.Always,
-        config: AdsConfig = AdsConfig(),
+        config: AdsConfig = config(),
     ) = DefaultAdsClient(
         context, config, source, events, network, gateway, clock,
         CoroutineScope(UnconfinedTestDispatcher(testScheduler) + job), store, clock,
@@ -97,7 +97,7 @@ class ReviewRegressionTest {
     // M5-1: 앱 오프닝 기본 정책은 콜드 스타트 표시를 막지 않는다(첫 실행 제외 규칙은 따로)
     @Test fun appOpenDefaultAllowsColdStartAfterFirstLaunch() = runTest {
         // 지난 실행이 한 번 있었다 — 이번이 두 번째 실행
-        store.putLong(DefaultAdsClient.KEY_APP_OPEN_LAUNCHES, 1)
+        store.putLong(DefaultPolicies.KEY_APP_OPEN_LAUNCHES, 1)
         val c = client()
         val open = c.fullScreenController(AdUnit("open", AdFormat.AppOpen, "id"), "open")
         val r = open.show(activity)
@@ -122,7 +122,7 @@ class ReviewRegressionTest {
             override suspend fun initialize(context: Context, config: AdsConfig) = throw boom
         }
         val c = DefaultAdsClient(
-            context, AdsConfig(), AdsEnabledSource.Always, events, bad, gateway, clock,
+            context, config(), AdsEnabledSource.Always, events, bad, gateway, clock,
             CoroutineScope(UnconfinedTestDispatcher(testScheduler) + job),
         )
         val err = c.initializationError.value
@@ -161,7 +161,7 @@ class ReviewRegressionTest {
         repeat(60) { p.enqueueError(AdsException(AdsErrorKind.Load, 0, "x")) }
         val ctrl = FullScreenAdController(
             AdFormat.Interstitial, "p", listOf(AdUnit.interstitial("p", "") to "id"), context, p, AdFrequencyPolicy.Unlimited,
-            PreloadPolicy(maxRetries = 50, retryBackoffMillis = 1L shl 61),
+            preload(maxRetries = 50, retryBackoffMillis = 1L shl 61),
             kotlinx.coroutines.flow.MutableStateFlow(true), events, clock,
             CoroutineScope(UnconfinedTestDispatcher(testScheduler) + job),
         )
